@@ -1,5 +1,5 @@
 # Projektname
-test123
+
 Kurze, präzise Beschreibung des Projekts in 1–2 Sätzen.
 Was macht das Programm? Für wen ist es gedacht?
 
