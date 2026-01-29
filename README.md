@@ -1,6 +1,6 @@
 # LearnHub
 
-Eine webbasierte Lernplattform für Schüler und Studierende mit Karteikarten, Stundenplan, Notenverwaltung und Dateiorganisation. Ermöglicht effizientes Lernen durch personalisierte Dashboards und kollaborative Funktionen.
+Eine anwendungsbasierte Lernplattform für Schüler und Studierende mit Karteikarten, Stundenplan, Notenverwaltung und Dateiorganisation. Ermöglicht effizientes Lernen durch personalisierte Dashboards und kollaborative Funktionen.
 
 ***
 
@@ -19,7 +19,7 @@ Eine webbasierte Lernplattform für Schüler und Studierende mit Karteikarten, S
 
 **LearnHub** löst das Chaos bei Lernorganisation: Schüler und Studierende haben ihre Karteikarten, Noten, Hausaufgaben, Stundenpläne und Lernmaterialien stets übersichtlich an einem Ort. Die Plattform zeigt auf dem Dashboard sofort den Lernfortschritt, offene To-Dos und kommende Klausuren – perfekt für den Schul-/Uni-Alltag.
 
-Das Endergebnis ist eine **responsive Web-App** mit Login, Admin-Bereich und Premium-Features, die in Gruppen im Informatik-Leistungskurs JS1 umgesetzt wird.
+Das Endergebnis ist eine **responsive Java-App** mit Login, Admin-Bereich und Premium-Features, die in Gruppen im Informatik-Leistungskurs JS1 umgesetzt wird.
 
 ***
 
@@ -34,7 +34,7 @@ Das Endergebnis ist eine **responsive Web-App** mit Login, Admin-Bereich und Pre
 - Admin-Panel: Nutzerübersicht + Rollenverwaltung
 
 ### SOLL
-- Responsives Design (Mobile/Tablet/Desktop)
+- Desktop
 - Dunkel-/Hellmodus
 - To-Do-Liste mit Fälligkeitsdaten
 - Lernfortschritt-Balken + Badges (Streaks)
