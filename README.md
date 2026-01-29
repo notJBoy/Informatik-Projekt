@@ -107,71 +107,311 @@ learnhub/
 
 ## 4. Module & Zuständigkeiten
 
-### Modul: Authentifizierung
-**Zweck:** Benutzerverwaltung, Login/Logout, Session-Handling  
-**Verantwortlich:** [Name1]  
-**Dateien:** `js/auth.js`  
-**Schnittstellen (öffentliche Funktionen):**  
-- `login(username, password) → boolean` (Login prüfen/speichern)  
-- `register(userData) → boolean` (Neuen User anlegen)  
-- `getCurrentUser() → object|null` (Aktueller Benutzer)  
-- `logout() → void` (Session löschen)  
-- `isAdmin() → boolean` (Admin-Rechte prüfen)
+Modul: Authentifizierung
 
-### Modul: Dashboard
-**Zweck:** Hauptübersicht mit Widgets (Stundenplan, To-Dos, Fortschritt)  
-**Verantwortlich:** [Name2]  
-**Dateien:** `js/dashboard.js`, `css/dashboard.css`  
-**Schnittstellen:**  
-- `loadDashboard() → void` (Alle Widgets laden)  
-- `updateProgress(subjectId) → void` (Fortschrittsbalken aktualisieren)  
-- `getNextTodos(count) → array` (Nächste Aufgaben)  
+Zweck: Benutzerverwaltung, Login/Logout, Session-Handling
+Verantwortlich: [Name1]
+Dateien:
 
-### Modul: Karteikarten
-**Zweck:** Erstellen, Lernen, Statistiken von Karteikarten-Sets  
-**Verantwortlich:** [Name3]  
-**Dateien:** `js/flashcards.js`  
-**Schnittstellen:**  
-- `createCard(front, back, subjectId) → string` (Karten-ID)  
-- `startLearning(setId, mode) → void` (Lernsession starten)  
-- `getStats(setId) → object` (Erfolgsquote, Zeit)  
-- `markPublic(setId, isPublic) → void` (Set teilen)
+src/main/java/com/learnhub/controller/AuthController.java
 
-### Modul: Noten
-**Zweck:** Noteneingabe, Durchschnittsberechnung, Trends  
-**Verantwortlich:** [Name1]  
-**Dateien:** `js/grades.js`  
-**Schnittstellen:**  
-- `addGrade(subjectId, value, type) → void` (Note hinzufügen)  
-- `getAverage(subjectId) → number` (Durchschnitt)  
-- `getAllGrades(subjectId) → array` (Alle Noten)
+src/main/java/com/learnhub/service/AuthService.java
 
-### Modul: Stundenplan
-**Zweck:** Anzeige und Verwaltung des Wochen-/Monatsplans  
-**Verantwortlich:** [Name2]  
-**Dateien:** `js/timetable.js`  
-**Schnittstellen:**  
-- `setSchedule(day, slot, subject) → void` (Eintrag setzen)  
-- `getTodaySchedule() → array` (Heutige Kurse)  
-- `getWeekSchedule() → array` (aktuelle Woche)
+src/main/java/com/learnhub/model/User.java
 
-### Modul: Dateien
-**Zweck:** Upload, Organisation und Suche von Lernmaterial  
-**Verantwortlich:** [Name3]  
-**Dateien:** `js/files.js`  
-**Schnittstellen:**  
-- `uploadFile(file, subjectId, tags) → string` (Datei-ID)  
-- `getFiles(subjectId) → array` (Fach-Dateien)  
-- `searchFiles(query) → array` (Suche)
+Schnittstellen (öffentliche Funktionen):
 
-### Modul: Admin
-**Zweck:** Nutzer- und Abo-Verwaltung für Administratoren  
-**Verantwortlich:** [Name1]  
-**Dateien:** `js/admin.js`  
-**Schnittstellen:**  
-- `getAllUsers() → array` (Alle Nutzer)  
-- `setRole(userId, role) → void` (Rolle ändern)  
-- `getUserStats() → object` (Dashboard-Zahlen)
+login(username, password) → boolean (Login prüfen/speichern)
+
+register(userData) → boolean (Neuen User anlegen)
+
+getCurrentUser() → User|null (Aktuellen Benutzer abrufen)
+
+logout() → void (Session löschen)
+
+isAdmin() → boolean (Admin-Rechte prüfen)
+
+Beispiel-Implementierung:
+
+@Service
+public class AuthService {
+
+    private final UserRepository userRepository;
+
+    public AuthService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    public boolean login(String username, String password) {
+        // Authentifizierungslogik
+    }
+
+    public boolean register(User userData) {
+        // Benutzerregistrierung
+    }
+
+    public User getCurrentUser() {
+        // Gibt den aktuell eingeloggten Benutzer zurück
+    }
+
+    public void logout() {
+        // Löscht die Session
+    }
+
+    public boolean isAdmin(User user) {
+        // Prüft, ob der Benutzer Admin-Rechte hat
+    }
+}
+
+Modul: Dashboard
+
+Zweck: Hauptübersicht mit Widgets (Stundenplan, To-Dos, Fortschritt)
+Verantwortlich: [Name2]
+Dateien:
+
+src/main/java/com/learnhub/controller/DashboardController.java
+
+src/main/java/com/learnhub/service/DashboardService.java
+
+src/main/resources/templates/dashboard.html
+
+Schnittstellen:
+
+loadDashboard() → void (Alle Widgets laden)
+
+updateProgress(subjectId) → void (Fortschrittsbalken aktualisieren)
+
+getNextTodos(count) → List<Todo> (Nächste Aufgaben abrufen)
+
+Beispiel-Implementierung:
+
+@Controller
+public class DashboardController {
+
+    private final DashboardService dashboardService;
+
+    public DashboardController(DashboardService dashboardService) {
+        this.dashboardService = dashboardService;
+    }
+
+    @GetMapping("/dashboard")
+    public String loadDashboard(Model model) {
+        model.addAttribute("widgets", dashboardService.loadWidgets());
+        return "dashboard";
+    }
+
+    @PostMapping("/dashboard/updateProgress")
+    public void updateProgress(@RequestParam("subjectId") Long subjectId) {
+        dashboardService.updateProgress(subjectId);
+    }
+
+    @GetMapping("/dashboard/todos")
+    public List<Todo> getNextTodos(@RequestParam("count") int count) {
+        return dashboardService.getNextTodos(count);
+    }
+}
+
+Modul: Karteikarten
+
+Zweck: Erstellen, Lernen, Statistiken von Karteikarten-Sets
+Verantwortlich: [Name3]
+Dateien:
+
+src/main/java/com/learnhub/controller/FlashcardsController.java
+
+src/main/java/com/learnhub/service/FlashcardsService.java
+
+src/main/java/com/learnhub/model/Flashcard.java
+
+Schnittstellen:
+
+createCard(front, back, subjectId) → String (Karten-ID erstellen)
+
+startLearning(setId, mode) → void (Lernsession starten)
+
+getStats(setId) → FlashcardStats (Statistiken abfragen)
+
+markPublic(setId, isPublic) → void (Set öffentlich machen)
+
+Beispiel-Implementierung:
+
+@Service
+public class FlashcardsService {
+
+    private final FlashcardRepository flashcardRepository;
+
+    public FlashcardsService(FlashcardRepository flashcardRepository) {
+        this.flashcardRepository = flashcardRepository;
+    }
+
+    public String createCard(String front, String back, Long subjectId) {
+        // Logik zum Erstellen einer Karteikarte
+    }
+
+    public void startLearning(Long setId, String mode) {
+        // Logik zum Starten einer Lernsession
+    }
+
+    public FlashcardStats getStats(Long setId) {
+        // Statistiken für ein Karten-Set abrufen
+    }
+
+    public void markPublic(Long setId, boolean isPublic) {
+        // Logik, um das Set öffentlich oder privat zu machen
+    }
+}
+
+Modul: Noten
+
+Zweck: Noteneingabe, Durchschnittsberechnung, Trends
+Verantwortlich: [Name1]
+Dateien:
+
+src/main/java/com/learnhub/controller/GradesController.java
+
+src/main/java/com/learnhub/service/GradesService.java
+
+src/main/java/com/learnhub/model/Grade.java
+
+Schnittstellen:
+
+addGrade(subjectId, value, type) → void (Note hinzufügen)
+
+getAverage(subjectId) → double (Durchschnitt berechnen)
+
+getAllGrades(subjectId) → List<Grade> (Alle Noten anzeigen)
+
+Beispiel-Implementierung:
+
+@Service
+public class GradesService {
+
+    private final GradeRepository gradeRepository;
+
+    public GradesService(GradeRepository gradeRepository) {
+        this.gradeRepository = gradeRepository;
+    }
+
+    public void addGrade(Long subjectId, double value, String type) {
+        // Logik zum Hinzufügen einer Note
+    }
+
+    public double getAverage(Long subjectId) {
+        // Berechnung des Durchschnitts
+    }
+
+    public List<Grade> getAllGrades(Long subjectId) {
+        // Alle Noten für ein Fach abfragen
+    }
+}
+
+Modul: Stundenplan
+
+Zweck: Anzeige und Verwaltung des Wochen-/Monatsplans
+Verantwortlich: [Name2]
+Dateien:
+
+src/main/java/com/learnhub/controller/TimetableController.java
+
+src/main/java/com/learnhub/service/TimetableService.java
+
+src/main/java/com/learnhub/model/TimetableEntry.java
+
+Schnittstellen:
+
+setSchedule(day, slot, subject) → void (Eintrag setzen)
+
+getTodaySchedule() → List<TimetableEntry> (Heutige Kurse abrufen)
+
+getWeekSchedule() → List<TimetableEntry> (Stundenplan der Woche abrufen)
+
+Beispiel-Implementierung:
+
+@Service
+public class TimetableService {
+
+    private final TimetableRepository timetableRepository;
+
+    public TimetableService(TimetableRepository timetableRepository) {
+        this.timetableRepository = timetableRepository;
+    }
+
+    public void setSchedule(String day, String slot, String subject) {
+        // Stundenplaneintrag setzen
+    }
+
+    public List<TimetableEntry> getTodaySchedule() {
+        // Abfrage des heutigen Stundenplans
+    }
+
+    public List<TimetableEntry> getWeekSchedule() {
+        // Abfrage des Wochenplans
+    }
+}
+
+Modul: Dateien
+
+Zweck: Upload, Organisation und Suche von Lernmaterial
+Verantwortlich: [Name3]
+Dateien:
+
+src/main/java/com/learnhub/controller/FilesController.java
+
+src/main/java/com/learnhub/service/FilesService.java
+
+src/main/java/com/learnhub/model/File.java
+
+Schnittstellen:
+
+uploadFile(file, subjectId, tags) → String (Datei hochladen)
+
+getFiles(subjectId) → List<File> (Dateien eines Fachs abrufen)
+
+searchFiles(query) → List<File> (Suche nach Dateien)
+
+Beispiel-Implementierung:
+
+@Service
+public class FilesService {
+
+    private final FileRepository fileRepository;
+
+    public FilesService(FileRepository fileRepository) {
+        this.fileRepository = fileRepository;
+    }
+
+    public String uploadFile(MultipartFile file, Long subjectId, List<String> tags) {
+        // Logik zum Hochladen einer Datei
+    }
+
+    public List<File> getFiles(Long subjectId) {
+        // Abrufen der Dateien für ein bestimmtes Fach
+    }
+
+    public List<File> searchFiles(String query) {
+        // Suche nach Dateien
+    }
+}
+
+Modul: Admin
+
+Zweck: Nutzer- und Abo-Verwaltung für Administratoren
+Verantwortlich: [Name1]
+Dateien:
+
+src/main/java/com/learnhub/controller/AdminController.java
+
+src/main/java/com/learnhub/service/AdminService.java
+
+src/main/java/com/learnhub/model/UserRole.java
+
+Schnittstellen:
+
+getAllUsers() → List<User> (Alle Nutzer abrufen)
+
+setRole(userId, role) → void (Rolle ändern)
+
+getUserStats() → AdminStats (Admin-D
 
 ***
 
