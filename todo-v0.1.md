@@ -1,11 +1,11 @@
-Kernfunktionen (Muss-Have – Basis der Plattform)
-Authentifizierung & Benutzerverwaltung
+!Kernfunktionen (Muss-Have – Basis der Plattform)!
+-Authentifizierung & Benutzerverwaltung
 
-Login mit Benutzername und Passwort
+-Login mit Benutzername und Passwort
 
-Registrierung mit E-Mail-Bestätigung
+-Registrierung mit E-Mail-Bestätigung
 
-Passwort zurücksetzen (per E-Mail-Link)
+-Passwort zurücksetzen (per E-Mail-Link)
 
 Dashboard/Home-Layout
 
