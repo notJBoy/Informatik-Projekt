@@ -551,6 +551,9 @@ def admin_stats():
         "total_users": users,
         "total_flashcards": cards
     }
+    
+# =========================================
+# =========================================
 
 if __name__ == "__main__":
     import uvicorn
