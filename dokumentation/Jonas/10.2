@@ -1,0 +1,698 @@
+Anfang der Anmeldungspage:
+
+Du:
+Erstelle eine PHP/Html-Datei zum Anmelden an "Learnhub" gebe auch einen Demo-Account zum Testen an.
+Nach dem Anmelden sollte man zur Datei current_dashboard.php übergeleitet werden. 
+Als backend ist folgender python code schon implementiert:
+
+from fastapi import FastAPI, HTTPException, Depends
+from pydantic import BaseModel
+from typing import List, Optional
+from datetime import datetime
+import sqlite3
+import uuid
+import hashlib
+import os
+from fastapi import UploadFile, File
+from fastapi.responses import FileResponse
+
+UPLOAD_DIR = "uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+# =========================================
+# APP INITIALISIERUNG
+# =========================================
+
+app = FastAPI(
+    title="LearnHub API",
+    description="Backend für die LearnHub Lernplattform",
+    version="1.0.0"
+)
+
+DB_NAME = "learnhub.db"
+
+
+# =========================================
+# DATABASE SETUP
+# =========================================
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    db = get_db()
+    cursor = db.cursor()
+
+    # FILES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS files (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        filename TEXT,
+        original_name TEXT,
+        subject TEXT,
+        uploaded_at TEXT
+    )
+    """)
+
+    
+    # USERS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        username TEXT UNIQUE,
+        email TEXT,
+        password TEXT,
+        role TEXT,
+        created_at TEXT
+    )
+    """)
+
+    # TODOS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS todos (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        title TEXT,
+        subject TEXT,
+        due_date TEXT,
+        priority TEXT,
+        done INTEGER
+    )
+    """)
+
+    # GRADES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS grades (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        value REAL,
+        description TEXT,
+        date TEXT
+    )
+    """)
+
+    # TIMETABLE
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS timetable (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        day TEXT,
+        time TEXT,
+        subject TEXT
+    )
+    """)
+
+    # FLASHCARDS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS flashcards (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        subject TEXT,
+        front TEXT,
+        back TEXT,
+        public INTEGER
+    )
+    """)
+
+    db.commit()
+    db.close()
+
+
+init_db()
+
+# =========================================
+# HILFSFUNKTIONEN
+# =========================================
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+
+def generate_id() -> str:
+    return str(uuid.uuid4())
+
+
+# =========================================
+# Pydantic MODELS (Request / Response)
+# =========================================
+
+class UserRegister(BaseModel):
+    username: str
+    email: str
+    password: str
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+
+class TodoCreate(BaseModel):
+    title: str
+    subject: str
+    due_date: str
+    priority: str
+
+
+class GradeCreate(BaseModel):
+    subject: str
+    value: float
+    description: Optional[str] = ""
+
+
+class FlashcardCreate(BaseModel):
+    subject: str
+    front: str
+    back: str
+    public: bool = False
+    
+class TimetableCreate(BaseModel):
+    day: str       # monday, tuesday, ...
+    time: str      # "08:00 - 09:30"
+    subject: str
+
+
+# =========================================
+# AUTH ROUTES
+# =========================================
+
+@app.post("/auth/register")
+def register(user: UserRegister):
+    db = get_db()
+    cursor = db.cursor()
+
+    try:
+        cursor.execute("""
+        INSERT INTO users VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            generate_id(),
+            user.username,
+            user.email,
+            hash_password(user.password),
+            "user",
+            datetime.utcnow().isoformat()
+        ))
+        db.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(status_code=400, detail="Username existiert bereits")
+
+    return {"message": "Registrierung erfolgreich"}
+
+ChatGPT:
+
+Um die Anmeldefunktion für "Learnhub" mit PHP/HTML zu erstellen und sicherzustellen, dass nach erfolgreichem Login eine Weiterleitung zur current_dashboard.php-Datei erfolgt, kannst du den folgenden PHP/HTML-Code verwenden. Der Code nimmt die Benutzerdaten (Benutzername und Passwort), sendet sie an das FastAPI-Backend, und wenn die Authentifizierung erfolgreich ist, wird der Benutzer auf das Dashboard weitergeleitet.
+
+Hier ist die PHP/HTML-Datei, die du verwenden kannst:
+login.php
+
+<?php
+// Einfache Session-Startung
+session_start();
+
+// Fehlernachricht (falls vorhanden)
+$error_message = '';
+
+// Wenn das Formular abgesendet wird
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    // API-Endpunkt für Login
+    $url = 'http://localhost:8000/auth/login';
+
+    // POST-Daten vorbereiten
+    $data = json_encode([
+        'username' => $username,
+        'password' => $password
+    ]);
+
+    // cURL-Anfrage zur API
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    // Überprüfen, ob die Anmeldung erfolgreich war
+    if ($http_code == 200) {
+        $_SESSION['username'] = $username;  // Benutzername speichern
+        header('Location: current_dashboard.php');  // Weiterleitung
+        exit();
+    } else {
+        $error_message = 'Ungültige Anmeldedaten';
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnHub Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .login-container h2 {
+            text-align: center;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .login-btn:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .demo-credentials {
+            text-align: center;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <h2>Login</h2>
+
+        <!-- Fehlernachricht anzeigen -->
+        <?php if ($error_message): ?>
+            <div class="error-message"><?php echo $error_message; ?></div>
+        <?php endif; ?>
+
+        <!-- Login-Formular -->
+        <form method="POST" action="login.php">
+            <input type="text" name="username" class="input-field" placeholder="Benutzername" required><br>
+            <input type="password" name="password" class="input-field" placeholder="Passwort" required><br>
+            <button type="submit" class="login-btn">Anmelden</button>
+        </form>
+
+        <div class="demo-credentials">
+            <p>Demo-Account:</p>
+            <p>Benutzername: demo<br>Passwort: demo123</p>
+        </div>
+    </div>
+
+</body>
+</html>
+
+Erläuterung:
+
+    Formular für den Login:
+
+        Der Benutzer gibt seinen Benutzernamen und Passwort ein. Die Daten werden per POST an login.php gesendet.
+
+    PHP-Backend-Logik:
+
+        Die Daten werden an die FastAPI-Route /auth/login gesendet, die dann überprüft, ob der Benutzer existiert und das Passwort korrekt ist.
+
+        Wenn die Antwort vom Backend ein 200 OK ist, wird der Benutzer zur Seite current_dashboard.php weitergeleitet.
+
+        Wenn die Anmeldung fehlschlägt (z. B. ungültiger Benutzername oder Passwort), wird eine Fehlermeldung angezeigt.
+
+    Demo-Account:
+
+        Ein Demo-Account ist für Testzwecke angegeben:
+
+            Benutzername: demo
+
+            Passwort: demo123
+
+FastAPI Login-Route:
+
+Damit der obige PHP-Code funktioniert, musst du eine Login-Route im FastAPI-Backend erstellen. Hier ein Beispiel für eine mögliche Implementierung dieser Route:
+FastAPI Login Route (Backend)
+
+Füge diese Route in deinem Python-Code hinzu:
+
+@app.post("/auth/login")
+def login(user: UserLogin):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT * FROM users WHERE username = ?
+    """, (user.username,))
+    user_db = cursor.fetchone()
+
+    if user_db is None or user_db['password'] != hash_password(user.password):
+        raise HTTPException(status_code=401, detail="Ungültiger Benutzername oder Passwort")
+
+    return {"message": "Login erfolgreich"}
+
+Weitere Hinweise:
+
+    Stelle sicher, dass FastAPI auf localhost:8000 läuft, damit der PHP-Code auf den Endpunkt zugreifen kann.
+
+    Wenn du den Code in einer Produktionsumgebung verwendest, solltest du HTTPS verwenden, um die Verbindung zu sichern.
+
+    Achte darauf, dass die Datenbank ordnungsgemäß funktioniert und die users-Tabelle korrekt eingerichtet ist.
+
+Mit dieser Lösung hast du ein funktionierendes Login-System mit einer Weiterleitung zur Dashboard-Seite nach erfolgreichem Login!
+
+Du:
+erstelle auch einen bereich zum registrieren und fixe das design
+
+ChatGPT:
+
+Um auch eine Registrierungsseite hinzuzufügen und das Design zu verbessern, erstelle ich zwei separate Seiten: eine für die Anmeldung und eine für die Registrierung. Beide Seiten werden über ein gemeinsames Design verfügen, aber die Registrierung wird separate Felder für die Eingabe von Benutzernamen, E-Mail und Passwort umfassen.
+1. login.php – Anmeldeseite
+
+Hier ist der verbesserte Code für die Anmeldeseite mit einem klareren Layout und einer Navigation zur Registrierungsseite.
+
+<?php
+// Einfache Session-Startung
+session_start();
+
+// Fehlernachricht (falls vorhanden)
+$error_message = '';
+
+// Wenn das Formular abgesendet wird
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    // API-Endpunkt für Login
+    $url = 'http://localhost:8000/auth/login';
+
+    // POST-Daten vorbereiten
+    $data = json_encode([
+        'username' => $username,
+        'password' => $password
+    ]);
+
+    // cURL-Anfrage zur API
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    // Überprüfen, ob die Anmeldung erfolgreich war
+    if ($http_code == 200) {
+        $_SESSION['username'] = $username;  // Benutzername speichern
+        header('Location: current_dashboard.php');  // Weiterleitung
+        exit();
+    } else {
+        $error_message = 'Ungültige Anmeldedaten';
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnHub Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .container h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .error-message {
+            color: red;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .register-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .register-link a {
+            text-decoration: none;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Login</h2>
+
+        <!-- Fehlernachricht anzeigen -->
+        <?php if ($error_message): ?>
+            <div class="error-message"><?php echo $error_message; ?></div>
+        <?php endif; ?>
+
+        <!-- Login-Formular -->
+        <form method="POST" action="login.php">
+            <input type="text" name="username" class="input-field" placeholder="Benutzername" required><br>
+            <input type="password" name="password" class="input-field" placeholder="Passwort" required><br>
+            <button type="submit" class="button">Anmelden</button>
+        </form>
+
+        <div class="register-link">
+            <p>Noch keinen Account? <a href="register.php">Jetzt registrieren</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
+
+2. register.php – Registrierungsseite
+
+Nun erstellen wir die Registrierungsseite, die dem Benutzer die Möglichkeit bietet, ein Konto zu erstellen. Diese Seite wird Felder für den Benutzernamen, die E-Mail-Adresse und das Passwort enthalten.
+
+<?php
+// Fehlernachricht (falls vorhanden)
+$error_message = '';
+$success_message = '';
+
+// Wenn das Formular abgesendet wird
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    // API-Endpunkt für Registrierung
+    $url = 'http://localhost:8000/auth/register';
+
+    // POST-Daten vorbereiten
+    $data = json_encode([
+        'username' => $username,
+        'email' => $email,
+        'password' => $password
+    ]);
+
+    // cURL-Anfrage zur API
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    $response = curl_exec($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    // Überprüfen, ob die Registrierung erfolgreich war
+    if ($http_code == 200) {
+        $success_message = 'Registrierung erfolgreich! Du kannst dich jetzt einloggen.';
+    } else {
+        $error_message = 'Ein Fehler ist aufgetreten. Bitte versuche es erneut.';
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnHub Registrierung</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
+        .container h2 {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .error-message, .success-message {
+            text-align: center;
+            font-size: 0.9rem;
+        }
+        .error-message {
+            color: red;
+        }
+        .success-message {
+            color: green;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        .login-link a {
+            text-decoration: none;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Registrierung</h2>
+
+        <!-- Erfolgsmeldung -->
+        <?php if ($success_message): ?>
+            <div class="success-message"><?php echo $success_message; ?></div>
+        <?php endif; ?>
+
+        <!-- Fehlernachricht -->
+        <?php if ($error_message): ?>
+            <div class="error-message"><?php echo $error_message; ?></div>
+        <?php endif; ?>
+
+        <!-- Registrierungs-Formular -->
+        <form method="POST" action="register.php">
+            <input type="text" name="username" class="input-field" placeholder="Benutzername" required><br>
+            <input type="email" name="email" class="input-field" placeholder="E-Mail" required><br>
+            <input type="password" name="password" class="input-field" placeholder="Passwort" required><br>
+            <button type="submit" class="button">Registrieren</button>
+        </form>
+
+        <div class="login-link">
+            <p>Bereits ein Account? <a href="login.php">Jetzt einloggen</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
+
+Zusammenfassung:
+
+    Login-Seite (login.php):
+
+        Benutzer gibt Benutzernamen und Passwort ein.
+
+        Bei erfolgreicher Anmeldung erfolgt eine Weiterleitung zur current_dashboard.php.
+
+        Verlinkung zur Registrierungsseite.
+
+    Registrierungsseite (register.php):
+
+        Benutzer gibt Benutzernamen, E-Mail und Passwort ein.
+
+        Nach erfolgreicher Registrierung wird eine Bestätigungsmeldung angezeigt, die den Benutzer auffordert, sich anzumelden.
+
+    Beide Seiten haben ein einheitliches Design, das gut aussieht und benutzerfreundlich ist.
+
+Hinweise:
+
+    Stelle sicher, dass der FastAPI-Server korrekt läuft und dass alle Endpunkte verfügbar sind.
+
+    Teste die Registrierung und Anmeldung gründlich, um sicherzustellen, dass keine Fehler auftreten.
+
+
