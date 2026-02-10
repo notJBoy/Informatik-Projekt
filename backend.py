@@ -141,6 +141,15 @@ def generate_id() -> str:
 # Pydantic MODELS (Request / Response)
 # =========================================
 
+class ChangeUsername(BaseModel):
+    new_username: str
+
+
+class ChangePassword(BaseModel):
+    old_password: str
+    new_password: str
+
+
 class UserRegister(BaseModel):
     username: str
     email: str
@@ -203,6 +212,56 @@ def register(user: UserRegister):
 
     return {"message": "Registrierung erfolgreich"}
 
+@app.put("/auth/change-username/{user_id}")
+def change_username(user_id: str, data: ChangeUsername):
+    db = get_db()
+    cursor = db.cursor()
+
+    # Prüfen ob Username bereits existiert
+    cursor.execute(
+        "SELECT id FROM users WHERE username=?",
+        (data.new_username,)
+    )
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Username bereits vergeben")
+
+    cursor.execute("""
+        UPDATE users
+        SET username=?
+        WHERE id=?
+    """, (data.new_username, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+
+    db.commit()
+    return {"message": "Username erfolgreich geändert"}
+
+
+@app.put("/auth/change-password/{user_id}")
+def change_password(user_id: str, data: ChangePassword):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+        SELECT password FROM users WHERE id=?
+    """, (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+
+    if user["password"] != hash_password(data.old_password):
+        raise HTTPException(status_code=401, detail="Altes Passwort ist falsch")
+
+    cursor.execute("""
+        UPDATE users
+        SET password=?
+        WHERE id=?
+    """, (hash_password(data.new_password), user_id))
+
+    db.commit()
+    return {"message": "Passwort erfolgreich geändert"}
 
 
 # =========================================
@@ -225,31 +284,11 @@ def get_timetable(user_id: str):
 
 
 # =========================================
-# Timetable routes
+# File upload routes
 # =========================================
 
-@app.delete("/files/{user_id}/{file_id}")
-def delete_file(user_id: str, file_id: str):
-    db = get_db()
-    cursor = db.cursor()
 
-    cursor.execute("""
-    SELECT filename FROM files WHERE id=? AND user_id=?
-    """, (file_id, user_id))
 
-    file = cursor.fetchone()
-    if not file:
-        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
-
-    file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
-
-    if os.path.exists(file_path):
-        os.remove(file_path)
-
-    cursor.execute("DELETE FROM files WHERE id=?", (file_id,))
-    db.commit()
-
-    return {"message": "Datei gelöscht"}
 
 @app.post("/timetable/{user_id}")
 def add_timetable_entry(user_id: str, entry: TimetableCreate):
@@ -268,6 +307,8 @@ def add_timetable_entry(user_id: str, entry: TimetableCreate):
 
     db.commit()
     return {"message": "Stunde hinzugefügt"}
+
+
 
 
 @app.put("/timetable/{user_id}/{entry_id}")
@@ -318,6 +359,29 @@ def delete_timetable_entry(user_id: str, entry_id: str):
 # =========================================
 # FILE UPLOAD ROUTES
 # =========================================
+
+@app.delete("/files/{user_id}/{file_id}")
+def delete_file(user_id: str, file_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    SELECT filename FROM files WHERE id=? AND user_id=?
+    """, (file_id, user_id))
+
+    file = cursor.fetchone()
+    if not file:
+        raise HTTPException(status_code=404, detail="Datei nicht gefunden")
+
+    file_path = os.path.join(UPLOAD_DIR, user_id, file["filename"])
+
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    cursor.execute("DELETE FROM files WHERE id=?", (file_id,))
+    db.commit()
+
+    return {"message": "Datei gelöscht"}
 
 @app.get("/files/download/{user_id}/{file_id}")
 def download_file(user_id: str, file_id: str):
@@ -390,8 +454,6 @@ def upload_file(
     db.commit()
 
     return {"message": "Datei erfolgreich hochgeladen"}
-
-
 
 @app.post("/auth/login")
 def login(data: UserLogin):
@@ -551,9 +613,6 @@ def admin_stats():
         "total_users": users,
         "total_flashcards": cards
     }
-    
-# =========================================
-# =========================================
 
 if __name__ == "__main__":
     import uvicorn
