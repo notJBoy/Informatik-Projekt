@@ -1,1 +1,915 @@
+kannst du mir eine website erstellen bei der man seine vokabeln für verschiedene fächer eintragen und lernen kann und frag mich noch deine zusätzlichen ideen bevor du sie mit einfügst
+Ja, ich kann dir so eine Website bauen – als einfache HTML/CSS/JavaScript‑Datei, die im Browser läuft und deine Vokabeln lokal speichert.
 
+Bevor ich den Code schreibe, habe ich ein paar Fragen und Zusatz‑Ideen, damit es genau zu dir passt:
+
+Fragen an dich
+Fächer und Sprachen
+
+Für welche Fächer willst du Vokabeln lernen (z.B. Englisch, Latein, Französisch, Spanisch, Bio‑Fachbegriffe)?
+
+Brauchst du mehrere Sprachen pro Fach (z.B. Deutsch → Englisch und Englisch → Deutsch) oder reicht eine Richtung?
+
+Aufbau der Vokabeln
+
+Reicht „Vokabel“ + „Übersetzung“ oder möchtest du auch: Beispielsatz, Hinweis (z.B. unregelmäßig), Lektion/Kapitel?
+
+Möchtest du Vokabeln in „Lektionen“ oder „Themen“ einteilen (z.B. Unit 1, Unit 2)?
+​
+
+Lernen / Abfrage‑Modus
+
+Wie soll geübt werden: Karteikarten‑Stil (Frage → Klick → Antwort anzeigen, dann „wusste ich / wusste ich nicht“)?
+
+Sollen Vokabeln, die du kannst, seltener abgefragt werden (einfaches Karteikasten‑System / Spaced Repetition light)?
+
+Fortschritt speichern
+
+Darf ich den Browser‑Speicher (localStorage) nutzen, damit deine Vokabeln und dein Lernstand ohne Login erhalten bleiben? Das läuft komplett lokal.
+
+Möchtest du eine Export/Import‑Funktion als CSV‑Datei (damit du deine Vokabeln sichern kannst)?
+​
+
+Oberfläche / Design
+
+Soll das Design sehr schlicht sein (weiß, ein paar Farben) oder wünschst du dir z.B. ein helles/dunkles Thema?
+
+Soll es eher für PC gedacht sein oder auch gut auf Handy funktionieren (responsive)?
+
+Meine zusätzlichen Ideen (bitte sag, was du davon willst)
+Filter nach Fach und Lektion: Du kannst z.B. „Englisch – Unit 3“ auswählen und nur diese Vokabeln lernen.
+​
+
+Lernstatistik pro Fach: Anzeige, wie viele Vokabeln du in einem Fach schon „kannst“ vs. „noch üben“.
+​
+
+Einfache 3‑Stufen‑Bewertung pro Karte: „kann ich gut“, „geht so“, „kann ich nicht“ – danach richtet sich, wie oft sie kommt (vereinfachter Leitner‑Kasten).
+
+Schnell‑Eingabe: Ein Formular zum schnellen Hinzufügen mehrerer Vokabeln hintereinander ohne viel Klicken.
+​
+
+Optional: „Nur noch X Vokabeln heute“ – ein kleines Tagesziel mit Fortschrittsbalken.
+​
+
+Schreib mir bitte:
+
+Welche Fächer/Sprachen du brauchst.
+
+Welche Felder jede Vokabel haben soll.
+
+Welche der oben genannten Ideen ich einbauen soll (gern mit Nummern).
+
+Dann baue ich dir im nächsten Schritt den kompletten HTML/JS/CSS‑Code, den du als einzelne Datei speichern und direkt im Browser öffnen kannst.
+
+es soll französisch englisch latein und spanisch und italienisch dabei sein; abfrage modus fortschritt spreichern analysieren , schönes dunkles design
+Okay, verstanden: Fächer/Sprachen sollen Französisch, Englisch, Latein, Spanisch und Italienisch sein, mit Abfrage‑Modus, Fortschritt speichern und auswerten, in einem schönen Dark‑Design.
+
+Bevor ich den Code schreibe, brauche ich noch zwei kurze Entscheidungen von dir:
+
+Felder pro Vokabel
+Möchtest du nur
+
+„Vokabel in Fremdsprache“ + „Übersetzung auf Deutsch“
+oder zusätzlich
+
+„Beispielsatz“ und „Hinweis/Notiz“ (z.B. Verbformen, Genus, unregelmäßig)?
+
+Lern‑Modus / Auswertung
+Welche Variante klingt besser:
+
+Variante A: Jede Karte hat unten drei Buttons: „kann ich“, „unsicher“, „kann ich nicht“; daraus wird eine einfache Prozent‑Statistik pro Sprache/Fach berechnet.
+
+Variante B: Es gibt nur „richtig“ / „falsch“, und du siehst Trefferquote und Anzahl gelernter Vokabeln pro Sprache.
+
+Bitte antworte kurz z.B.:
+
+„Felder: nur Wort + Übersetzung“ oder „mit Beispielsatz und Hinweis“
+
+„Lernmodus: A“ oder „Lernmodus: B“
+
+Dann baue ich dir im nächsten Schritt eine einzelne HTML‑Datei mit:
+
+Auswahl der Sprache (Fr, En, La, Es, It)
+
+Eingabeformular für neue Vokabeln
+
+Lernansicht mit Flashcards im dunklen Design
+
+Speicherung und einfache Analyse im Browser‑Speicher (localStorage).
+
+gerne so ne info button wo man ein beispielsatz und definition nachschauen kann; variante A ist gut
+Hier ist eine erste Version deiner Vokabel‑Website als einzelne HTML‑Datei mit Dark‑Theme, fünf Sprachen, Lernmodus A und Info‑Button (Beispielsatz + Definition). Du kannst den gesamten Code in eine Datei vokabeltrainer.html kopieren und im Browser öffnen.
+
+xml
+<title>Vokabeltrainer</title> <style> :root { --bg-page: #0a0a0a; --bg-card: #1a1a1a; --bg-elevated: #232323; --bg-input: #181818; --accent: #4f46e5; --accent-soft: #4338ca; --danger: #ef4444; --text-primary: #f9fafb; --text-secondary: #9ca3af; --border-subtle: #27272a; --radius-lg: 14px; --radius-md: 10px; --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.8); --shadow-sm: 0 10px 30px rgba(0, 0, 0, 0.6); }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+body {
+  background: radial-gradient(circle at top, #111827 0, #020617 45%, #000 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 24px;
+}
+
+.app {
+  width: 100%;
+  max-width: 1120px;
+  background: linear-gradient(135deg, rgba(31, 41, 55, 0.9), rgba(15, 23, 42, 0.96));
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1.2fr);
+  gap: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.left,
+.right {
+  padding: 24px 28px;
+}
+
+.left {
+  border-right: 1px solid rgba(55, 65, 81, 0.7);
+  background: radial-gradient(circle at top left, #111827 0, #020617 55%, #020617 100%);
+}
+
+.right {
+  background: radial-gradient(circle at top right, #020617 0, #020617 55%, #020617 100%);
+}
+
+header {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+h1 {
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+h1 span.logo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #f97316, #f97316 40%, #b91c1c);
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.7);
+}
+
+.subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.stats-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.stat-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(31, 41, 55, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  backdrop-filter: blur(8px);
+}
+
+.stat-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+}
+
+.dot-easy {
+  background: #22c55e;
+}
+.dot-mid {
+  background: #eab308;
+}
+.dot-hard {
+  background: #ef4444;
+}
+
+.tagline {
+  margin-top: 10px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.form-section {
+  margin-top: 18px;
+  padding: 16px 16px 18px;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 18px;
+  border: 1px solid rgba(51, 65, 85, 0.9);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-section-title {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #e5e7eb;
+}
+
+.pill {
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.25), rgba(129, 140, 248, 0.25));
+  border: 1px solid rgba(129, 140, 248, 0.55);
+  color: #e0e7ff;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 600px) {
+  .grid-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+label {
+  display: block;
+  font-size: 0.75rem;
+  margin-bottom: 3px;
+  color: var(--text-secondary);
+}
+
+select,
+input,
+textarea {
+  width: 100%;
+  background: var(--bg-input);
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 7px 9px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 56px;
+  max-height: 120px;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.7);
+  background: #020617;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.form-footer-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hint-text {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.btn {
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 14px;
+  transition: background 0.15s ease, transform 0.08s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #e5e7eb;
+  box-shadow: 0 12px 25px rgba(55, 48, 163, 0.7);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(55, 48, 163, 0.85);
+  background: linear-gradient(135deg, #4338ca, #6d28d9);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 0.75rem;
+}
+
+.btn-ghost:hover {
+  border-color: rgba(148, 163, 184, 0.8);
+  color: #e5e7eb;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.btn-icon {
+  font-size: 0.9rem;
+}
+
+.list-section {
+  margin-top: 14px;
+  padding: 12px 10px 10px;
+  background: rgba(15, 23, 42, 0.9);
+  border-radius: 16px;
+  border: 1px dashed rgba(55, 65, 81, 0.9);
+  max-height: 260px;
+  overflow-y: auto;
+  backdrop-filter: blur(6px);
+}
+
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+.vocab-count {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.vocab-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.8rem;
+}
+
+.vocab-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+}
+
+.vocab-item-main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vocab-word {
+  font-weight: 500;
+}
+
+.vocab-meta {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.label-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  color: var(--text-secondary);
+}
+
+.difficulty-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #4b5563;
+}
+
+.actions-row {
+  display: flex;
+  gap: 6px;
+}
+
+.btn-xs {
+  padding: 4px 7px;
+  font-size: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.btn-xs:hover {
+  background: rgba(30, 64, 175, 0.6);
+  border-color: rgba(129, 140, 248, 0.7);
+  color: #e5e7eb;
+}
+
+.btn-xs-danger {
+  border-color: rgba(248, 113, 113, 0.8);
+  color: #fecaca;
+}
+
+.btn-xs-danger:hover {
+  background: rgba(220, 38, 38, 0.8);
+  color: #fee2e2;
+}
+
+.right-header {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.mode-toggles {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.filter-chip.active {
+  border-color: rgba(79, 70, 229, 0.9);
+  background: rgba(30, 64, 175, 0.9);
+  color: #e5e7eb;
+}
+
+.streak-box {
+  padding: 6px 9px;
+  border-radius: 999px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  background: rgba(15, 23, 42, 0.85);
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+}
+
+.streak-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #bef264, #22c55e);
+  box-shadow: 0 0 10px rgba(22, 163, 74, 0.7);
+}
+
+.progress-wrapper {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-label-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.progress-bar {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(31, 41, 55, 0.9);
+  overflow: hidden;
+}
+
+.progress-fill-easy {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #22c55e, #4ade80);
+  transition: width 0.2s ease;
+}
+
+.progress-fill-mid {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #eab308, #facc15);
+  transition: width 0.2s ease;
+  opacity: 0.7;
+}
+
+.progress-fill-hard {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0%;
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  transition: width 0.2s ease;
+  opacity: 0.9;
+}
+
+.card-shell {
+  margin-top: 10px;
+  padding: 18px 18px 20px;
+  border-radius: 20px;
+  background: radial-gradient(circle at top, #020617, #020617 55%, #020617 100%);
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  box-shadow: var(--shadow-sm);
+  min-height: 210px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pill-language {
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text-secondary);
+}
+
+.little-flag {
+  font-size: 0.9rem;
+}
+
+.card-subline {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 3px;
+}
+
+.info-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  background: rgba(15, 23, 42, 0.85);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-btn:hover {
+  border-color: rgba(129, 140, 248, 0.8);
+  color: #e5e7eb;
+  background: rgba(30, 64, 175, 0.8);
+}
+
+.info-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #38bdf8;
+}
+
+.card-main {
+  margin: 10px 0 12px;
+  text-align: center;
+}
+
+.card-word {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.card-translation {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.empty-state {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 12px 4px;
+}
+
+.card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.answer-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-easy {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.18), rgba(22, 163, 74, 0.45));
+  color: #bbf7d0;
+  border-radius: 999px;
+  border: 1px solid rgba(74, 222, 128, 0.7);
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  min-width: 70px;
+}
+
+.btn-mid {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(202, 138, 4, 0.45));
+  color: #fef9c3;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.75);
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  min-width: 80px;
+}
+
+.btn-hard {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.16), rgba(220, 38, 38, 0.5));
+  color: #fee2e2;
+  border-radius: 999px;
+  border: 1px solid rgba(248, 113, 113, 0.8);
+  padding: 7px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  min-width: 90px;
+}
+
+.btn-easy:hover {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.4), rgba(22, 163, 74, 0.8));
+}
+
+.btn-mid:hover {
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.35), rgba(202, 138, 4, 0.8));
+}
+
+.btn-hard:hover {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.4), rgba(220, 38, 38, 0.9));
+}
+
+.card-hint-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.card-hint-pill {
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(55, 65, 81, 0.9);
+  background: rgba(15, 23, 42, 0.9);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+}
+
+.indicator-easy {
+  background: #22c55e;
+}
+
+.indicator-mid {
+  background: #eab308;
+}
+
+.indicator-hard {
+  background: #ef4444;
+}
+
+.card-index {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.78);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+
+.modal-backdrop.show {
+  display: flex;
+}
+
+.modal {
+  width: 100%;
+  max-width: 420px;
+  background: linear-gradient(135deg, #020617, #020617 30%, #020617 100%);
+  border-radius: 18px;
+  padding: 16px 18px 14px;
+  border: 1px solid rgba(55, 65, 81, 0.95);
+  box-shadow: var(--shadow-soft);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.modal-title {
+  font-size: 0.9rem;
+}
+
+.modal-chip {
+  margin-top: 3px;
+  font-size: 0.7rem;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  color: var(--text-secondary);
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.modal-close {
+  border-radius: 999px;
+  border: 1px solid rgba(75, 85, 99, 0.8);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text-secondary);
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.modal-close:hover {
+  background: rgba(30, 64, 175, 0.9);
+  color: #e5e7eb;
+  border-color: rgba(129, 140, 248, 0.9);
+}
+
+.modal-body {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.modal-body h4 {
+  font-size: 0.8rem;
+  color: #e5e7eb;
+  margin-bottom: 2px;
+}
+
+.modal-body p {
+  line-height: 1.4;
+}
+
+.modal-footer {
+  margin-top: 10px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.little-badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(79, 70, 229, 0.7);
+  background: rgba(30, 64, 175, 0.9);
+  font-size: 0.65rem;
+  color: #e5e7eb;
+}
+
+.no-wrap {
+  white-space: nowrap;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+</style> 
