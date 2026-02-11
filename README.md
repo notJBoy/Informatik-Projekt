@@ -20,4 +20,4 @@ Eine anwendungsbasierte Lernplattform für Schüler und Studierende mit Karteika
 1. Repository klonen: `git clone [URL]`
 2. In der Console `pip install -r requirements.txt` eingeben
 3. In der Console `python backend.py` eingeben
-4. `login.php` auf Server öffnen
+4. `index.php` auf Server öffnen
