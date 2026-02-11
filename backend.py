@@ -173,7 +173,10 @@ class GradeCreate(BaseModel):
     value: float
     description: Optional[str] = ""
 
+class DeleteAccountRequest(BaseModel):
+    password: str
 
+    
 class FlashcardCreate(BaseModel):
     subject: str
     front: str
@@ -470,6 +473,53 @@ def login(user: UserLogin):
 
     return {"message": "Login erfolgreich"}
 
+@app.delete("/auth/delete-account/{user_id}")
+def delete_account(user_id: str, data: DeleteAccountRequest):
+    db = get_db()
+    cursor = db.cursor()
+
+    # -------------------------
+    # 1️⃣ User abrufen
+    # -------------------------
+    cursor.execute("SELECT password FROM users WHERE id=?", (user_id,))
+    user = cursor.fetchone()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User nicht gefunden")
+
+    # -------------------------
+    # 2️⃣ Passwort prüfen
+    # -------------------------
+    if user["password"] != hash_password(data.password):
+        raise HTTPException(status_code=401, detail="Passwort ist falsch")
+
+    # -------------------------
+    # 3️⃣ Abhängige Daten löschen
+    # -------------------------
+    cursor.execute("DELETE FROM todos WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM grades WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM timetable WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM flashcards WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM files WHERE user_id=?", (user_id,))
+
+    # -------------------------
+    # 4️⃣ User löschen
+    # -------------------------
+    cursor.execute("DELETE FROM users WHERE id=?", (user_id,))
+    db.commit()
+
+    # -------------------------
+    # 5️⃣ Upload-Ordner löschen
+    # -------------------------
+    user_dir = os.path.join(UPLOAD_DIR, user_id)
+    if os.path.exists(user_dir):
+        for filename in os.listdir(user_dir):
+            file_path = os.path.join(user_dir, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        os.rmdir(user_dir)
+
+    return {"message": "Account erfolgreich gelöscht"}
 
 
 # =========================================
