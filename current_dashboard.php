@@ -1,15 +1,11 @@
 <?php
 session_start();
-
-if (!isset($_SESSION['user_id'])) {
+if (!isset($_SESSION['userid'])) {
     header("Location: login.php");
-    exit();
+    exit;
 }
-
-$user_id = $_SESSION['user_id'];
+$userid = $_SESSION['userid'];
 ?>
-
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -18,9 +14,9 @@ $user_id = $_SESSION['user_id'];
     <title>LearnHub Dashboard</title>
     <style>
         :root {
-            --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --font-family-mono: 'Courier New', monospace;
-            
+            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-family-mono: "Courier New", monospace;
+
             /* Light Mode Colors */
             --color-bg-primary: #f8f9fa;
             --color-bg-secondary: #ffffff;
@@ -38,6 +34,7 @@ $user_id = $_SESSION['user_id'];
             --color-warning: #ffc107;
             --color-danger: #dc3545;
             --color-info: #0dcaf0;
+
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
             --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
@@ -60,6 +57,7 @@ $user_id = $_SESSION['user_id'];
             --color-warning: #f59e0b;
             --color-danger: #ef4444;
             --color-info: #06b6d4;
+
             --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
             --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
             --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
@@ -116,7 +114,7 @@ $user_id = $_SESSION['user_id'];
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
+            color: #ffffff;
             font-weight: bold;
         }
 
@@ -172,7 +170,8 @@ $user_id = $_SESSION['user_id'];
             border-top: 1px solid var(--color-border);
         }
 
-        .theme-toggle, .account-btn {
+        .theme-toggle,
+        .account-btn {
             display: flex;
             align-items: center;
             width: 100%;
@@ -187,7 +186,8 @@ $user_id = $_SESSION['user_id'];
             margin-bottom: 0.5rem;
         }
 
-        .theme-toggle:hover, .account-btn:hover {
+        .theme-toggle:hover,
+        .account-btn:hover {
             background-color: var(--color-bg-hover);
             border-color: var(--color-primary);
         }
@@ -299,7 +299,7 @@ $user_id = $_SESSION['user_id'];
 
         .class-badge {
             background-color: var(--color-primary);
-            color: white;
+            color: #ffffff;
             padding: 0.25rem 0.75rem;
             border-radius: 6px;
             font-size: 0.85rem;
@@ -332,7 +332,7 @@ $user_id = $_SESSION['user_id'];
             padding: 0.25rem 0.75rem;
             border-radius: 6px;
             background-color: var(--color-success);
-            color: white;
+            color: #ffffff;
         }
 
         .grade-value.warning {
@@ -397,9 +397,17 @@ $user_id = $_SESSION['user_id'];
             border-radius: 50%;
         }
 
-        .priority-high { background-color: var(--color-danger); }
-        .priority-medium { background-color: var(--color-warning); }
-        .priority-low { background-color: var(--color-info); }
+        .priority-high {
+            background-color: var(--color-danger);
+        }
+
+        .priority-medium {
+            background-color: var(--color-warning);
+        }
+
+        .priority-low {
+            background-color: var(--color-info);
+        }
 
         /* Karteikarten Widget */
         .flashcard {
@@ -420,7 +428,8 @@ $user_id = $_SESSION['user_id'];
             transform: rotateY(180deg);
         }
 
-        .flashcard-front, .flashcard-back {
+        .flashcard-front,
+        .flashcard-back {
             position: absolute;
             width: 100%;
             height: 100%;
@@ -438,7 +447,7 @@ $user_id = $_SESSION['user_id'];
         .flashcard-back {
             transform: rotateY(180deg);
             background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-            color: white;
+            color: #ffffff;
         }
 
         .flashcard-nav {
@@ -450,7 +459,7 @@ $user_id = $_SESSION['user_id'];
         .flashcard-btn {
             padding: 0.5rem 1rem;
             background-color: var(--color-primary);
-            color: white;
+            color: #ffffff;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -534,7 +543,9 @@ $user_id = $_SESSION['user_id'];
             margin-top: 1rem;
         }
 
-        input[type="text"], input[type="number"], select {
+        input[type="text"],
+        input[type="number"],
+        select {
             flex: 1;
             padding: 0.75rem;
             border: 1px solid var(--color-border);
@@ -544,7 +555,8 @@ $user_id = $_SESSION['user_id'];
             font-size: 0.9rem;
         }
 
-        input:focus, select:focus {
+        input:focus,
+        select:focus {
             outline: none;
             border-color: var(--color-primary);
         }
@@ -552,7 +564,7 @@ $user_id = $_SESSION['user_id'];
         .btn-primary {
             padding: 0.75rem 1.5rem;
             background-color: var(--color-primary);
-            color: white;
+            color: #ffffff;
             border: none;
             border-radius: 6px;
             cursor: pointer;
@@ -616,317 +628,116 @@ $user_id = $_SESSION['user_id'];
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">
-                    <div class="logo-icon">LH</div>
-                    <span>LearnHub</span>
-                </div>
+<div class="app-container">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <div class="logo-icon">LH</div>
+                <span>LearnHub</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">Dashboard</div>
+                <a class="nav-item active" data-view="overview">
+                    <span class="nav-icon">🏠</span>
+                    <span>Übersicht</span>
+                </a>
             </div>
 
-            <nav class="sidebar-nav">
-                <div class="nav-section">
-                    <div class="nav-section-title">Dashboard</div>
-                    <a class="nav-item active" data-view="overview">
-                        <span class="nav-icon">📊</span>
-                        <span>Übersicht</span>
-                    </a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Module</div>
-                    <a class="nav-item" data-view="timetable">
-                        <span class="nav-icon">📅</span>
-                        <span>Stundenplan</span>
-                    </a>
-                    <a class="nav-item" data-view="grades">
-                        <span class="nav-icon">📝</span>
-                        <span>Noten</span>
-                    </a>
-                    <a class="nav-item" data-view="todos">
-                        <span class="nav-icon">✅</span>
-                        <span>To-Dos</span>
-                    </a>
-                    <a class="nav-item" data-view="flashcards">
-                        <span class="nav-icon">🎴</span>
-                        <span>Karteikarten</span>
-                    </a>
-                    <a class="nav-item" data-view="files">
-                        <span class="nav-icon">📁</span>
-                        <span>Dateien</span>
-                    </a>
-                    <a class="nav-item" data-view="admin">
-                        <span class="nav-icon">⚙️</span>
-                        <span>Admin Panel</span>
-                    </a>
-                </div>
-            </nav>
-
-            <div class="sidebar-footer">
-                <button class="theme-toggle" id="themeToggle">
-                    <span id="themeIcon">🌙</span>
-                    <span id="themeText" style="margin-left: 0.5rem;">Dark Mode</span>
-                </button>
-                <button class="account-btn">
-                    <span>👤</span>
-                    <span style="margin-left: 0.5rem;">Account</span>
-                </button>
+            <div class="nav-section">
+                <div class="nav-section-title">Module</div>
+                <a class="nav-item" data-view="timetable">
+                    <span class="nav-icon">📅</span>
+                    <span>Stundenplan</span>
+                </a>
+                <a class="nav-item" data-view="grades">
+                    <span class="nav-icon">📝</span>
+                    <span>Noten</span>
+                </a>
+                <a class="nav-item" data-view="todos">
+                    <span class="nav-icon">✅</span>
+                    <span>To-Dos</span>
+                </a>
+                <a class="nav-item" data-view="flashcards">
+                    <span class="nav-icon">🎴</span>
+                    <span>Karteikarten</span>
+                </a>
+                <a class="nav-item" data-view="files">
+                    <span class="nav-icon">📁</span>
+                    <span>Dateien</span>
+                </a>
+                <a class="nav-item" data-view="admin">
+                    <span class="nav-icon">⚙️</span>
+                    <span>Admin Panel</span>
+                </a>
             </div>
-        </aside>
+        </nav>
 
-        <!-- Main Content -->
-        <main class="main-content">
-            <div id="contentArea">
-                <!-- Overview Content -->
-                <div id="overview" class="view-content">
-                    <div class="content-header">
-                        <h1>Willkommen zurück! 👋</h1>
-                        <p>Hier ist deine Lernübersicht für heute</p>
-                    </div>
+        <div class="sidebar-footer">
+            <button class="theme-toggle" id="themeToggle">
+                <span id="themeIcon">🌞</span>
+                <span id="themeText" style="margin-left: 0.5rem;">Dark Mode</span>
+            </button>
+            <button class="account-btn">
+                <span>👤</span>
+                <span style="margin-left: 0.5rem;">Account</span>
+            </button>
+        </div>
+    </aside>
 
-                    <div class="dashboard-grid">
-                        <!-- Stundenplan Widget -->
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">📅</span>
-                                    Heute im Stundenplan
-                                </div>
-                                <button class="widget-action">→</button>
-                            </div>
-                            <div class="timetable">
-                                <div class="timetable-day">
-                                    <span class="day-name">08:00</span>
-                                    <div class="day-classes">
-                                        <span class="class-badge">Mathematik</span>
-                                    </div>
-                                </div>
-                                <div class="timetable-day">
-                                    <span class="day-name">09:45</span>
-                                    <div class="day-classes">
-                                        <span class="class-badge">Informatik</span>
-                                    </div>
-                                </div>
-                                <div class="timetable-day">
-                                    <span class="day-name">11:30</span>
-                                    <div class="day-classes">
-                                        <span class="class-badge">Physik</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Noten Widget -->
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">📝</span>
-                                    Aktuelle Noten
-                                </div>
-                                <button class="widget-action">→</button>
-                            </div>
-                            <div class="grades-list">
-                                <div class="grade-item">
-                                    <span class="grade-subject">Informatik</span>
-                                    <span class="grade-value">13 P</span>
-                                </div>
-                                <div class="grade-item">
-                                    <span class="grade-subject">Mathematik</span>
-                                    <span class="grade-value">12 P</span>
-                                </div>
-                                <div class="grade-item">
-                                    <span class="grade-subject">Physik</span>
-                                    <span class="grade-value warning">10 P</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- To-Do Widget -->
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">✅</span>
-                                    Offene Aufgaben
-                                </div>
-                                <button class="widget-action">→</button>
-                            </div>
-                            <div class="todo-list" id="todoList">
-                                <div class="todo-item">
-                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                                    <div class="todo-text">Mathematik Hausaufgaben fertigstellen</div>
-                                    <div class="todo-priority priority-high"></div>
-                                </div>
-                                <div class="todo-item">
-                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                                    <div class="todo-text">Physik Referat vorbereiten</div>
-                                    <div class="todo-priority priority-medium"></div>
-                                </div>
-                                <div class="todo-item">
-                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
-                                    <div class="todo-text">Karteikarten für Informatik erstellen</div>
-                                    <div class="todo-priority priority-low"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Karteikarten Widget -->
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">🎴</span>
-                                    Karteikarten lernen
-                                </div>
-                                <button class="widget-action">→</button>
-                            </div>
-                            <div class="flashcard" id="flashcard" onclick="flipCard('flashcard')">
-                                <div class="flashcard-inner" id="flashcardInner">
-                                    <div class="flashcard-front">
-                                        <p><strong>Frage:</strong> Was ist ein Automat?</p>
-                                    </div>
-                                    <div class="flashcard-back">
-                                        <p>Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="flashcard-nav">
-                                <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();">← Zurück</button>
-                                <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();">Weiter →</button>
-                            </div>
-                        </div>
-
-                        <!-- Dateien Widget -->
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">📁</span>
-                                    Letzte Dateien
-                                </div>
-                                <button class="widget-action">→</button>
-                            </div>
-                            <div class="files-list">
-                                <div class="file-item">
-                                    <span class="file-icon">📄</span>
-                                    <div class="file-info">
-                                        <div class="file-name">Informatik_Klausur_Vorbereitung.pdf</div>
-                                        <div class="file-meta">Hochgeladen vor 2 Tagen • 2.3 MB</div>
-                                    </div>
-                                </div>
-                                <div class="file-item">
-                                    <span class="file-icon">📊</span>
-                                    <div class="file-info">
-                                        <div class="file-name">Mathe_Formelsammlung.xlsx</div>
-                                        <div class="file-meta">Hochgeladen vor 5 Tagen • 1.1 MB</div>
-                                    </div>
-                                </div>
-                                <div class="file-item">
-                                    <span class="file-icon">🎥</span>
-                                    <div class="file-info">
-                                        <div class="file-name">Physik_Experiment_Video.mp4</div>
-                                        <div class="file-meta">Hochgeladen vor 1 Woche • 45 MB</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Admin Panel Widget -->
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">
-                                    <span class="widget-icon">⚙️</span>
-                                    Admin Statistiken
-                                </div>
-                                <button class="widget-action">→</button>
-                            </div>
-                            <div class="admin-stats">
-                                <div class="stat-card">
-                                    <div class="stat-value">156</div>
-                                    <div class="stat-label">Aktive User</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">24</div>
-                                    <div class="stat-label">Kurse</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">89%</div>
-                                    <div class="stat-label">Abschlussrate</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">4.8</div>
-                                    <div class="stat-label">Ø Bewertung</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <div id="contentArea">
+            <!-- Overview Content -->
+            <div id="overview" class="view-content">
+                <div class="content-header">
+                    <h1>Willkommen zurück!</h1>
+                    <p>Hier ist deine Lernübersicht für heute</p>
                 </div>
 
-                <!-- Stundenplan Detail View -->
-                <div id="timetable" class="view-content" style="display: none;">
-                    <div class="content-header">
-                        <h1>📅 Stundenplan</h1>
-                        <p>Deine Wochenübersicht</p>
-                    </div>
-                    <div class="widget">
-                        <div class="timetable">
-                            <div class="timetable-day">
-                                <span class="day-name">Montag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Mathematik</span>
-                                    <span class="class-badge">Informatik</span>
-                                    <span class="class-badge">Physik</span>
-                                </div>
-                            </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Dienstag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Deutsch</span>
-                                    <span class="class-badge">Englisch</span>
-                                    <span class="class-badge">Ethik</span>
-                                </div>
-                            </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Mittwoch</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Mathematik</span>
-                                    <span class="class-badge">Informatik</span>
-                                </div>
-                            </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Donnerstag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Physik</span>
-                                    <span class="class-badge">Ethik</span>
-                                    <span class="class-badge">Englisch</span>
-                                </div>
-                            </div>
-                            <div class="timetable-day">
-                                <span class="day-name">Freitag</span>
-                                <div class="day-classes">
-                                    <span class="class-badge">Deutsch</span>
-                                    <span class="class-badge">Mathematik</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Noten Detail View -->
-                <div id="grades" class="view-content" style="display: none;">
-                    <div class="content-header">
-                        <h1>📝 Notenübersicht</h1>
-                        <p>Alle deine Fächer und Noten</p>
-                    </div>
+                <div class="dashboard-grid">
+                    <!-- Stundenplan Widget -->
                     <div class="widget">
                         <div class="widget-header">
-                            <div class="widget-title">Note hinzufügen</div>
+                            <div class="widget-title">
+                                <span class="widget-icon">📅</span>
+                                <span>Heute im Stundenplan</span>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <input type="text" id="gradeSubject" placeholder="Fach eingeben...">
-                            <input type="number" id="gradeValue" placeholder="Note (0-15)" min="0" max="15">
-                            <button class="btn-primary" onclick="addGrade()">Hinzufügen</button>
+                        <div class="timetable">
+                            <div class="timetable-day">
+                                <span class="day-name">08:00</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Mathematik</span>
+                                </div>
+                            </div>
+                            <div class="timetable-day">
+                                <span class="day-name">09:45</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Informatik</span>
+                                </div>
+                            </div>
+                            <div class="timetable-day">
+                                <span class="day-name">11:30</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Physik</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="grades-list" id="gradesList" style="margin-top: 1.5rem;">
+                    </div>
+
+                    <!-- Noten Widget -->
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">📝</span>
+                                <span>Aktuelle Noten</span>
+                            </div>
+                        </div>
+                        <div class="grades-list">
                             <div class="grade-item">
                                 <span class="grade-subject">Informatik</span>
                                 <span class="grade-value">13 P</span>
@@ -939,54 +750,30 @@ $user_id = $_SESSION['user_id'];
                                 <span class="grade-subject">Physik</span>
                                 <span class="grade-value warning">10 P</span>
                             </div>
-                            <div class="grade-item">
-                                <span class="grade-subject">Deutsch</span>
-                                <span class="grade-value">11 P</span>
-                            </div>
-                            <div class="grade-item">
-                                <span class="grade-subject">Englisch</span>
-                                <span class="grade-value">14 P</span>
-                            </div>
-                            <div class="grade-item">
-                                <span class="grade-subject">Ethik</span>
-                                <span class="grade-value">12 P</span>
-                            </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- To-Dos Detail View -->
-                <div id="todos" class="view-content" style="display: none;">
-                    <div class="content-header">
-                        <h1>✅ To-Do Liste</h1>
-                        <p>Verwalte deine Aufgaben</p>
-                    </div>
+                    <!-- To-Do Widget -->
                     <div class="widget">
                         <div class="widget-header">
-                            <div class="widget-title">Neue Aufgabe</div>
+                            <div class="widget-title">
+                                <span class="widget-icon">✅</span>
+                                <span>Offene Aufgaben</span>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <input type="text" id="todoInput" placeholder="Aufgabe eingeben...">
-                            <select id="todoPriority">
-                                <option value="low">Niedrig</option>
-                                <option value="medium">Mittel</option>
-                                <option value="high">Hoch</option>
-                            </select>
-                            <button class="btn-primary" onclick="addTodo()">Hinzufügen</button>
-                        </div>
-                        <div class="todo-list" id="todosDetailList" style="margin-top: 1.5rem;"></div>
+                        <div class="todo-list" id="todoList"></div>
                     </div>
-                </div>
 
-                <!-- Karteikarten Detail View -->
-                <div id="flashcards" class="view-content" style="display: none;">
-                    <div class="content-header">
-                        <h1>🎴 Karteikarten</h1>
-                        <p>Lerne mit deinen Karteikarten</p>
-                    </div>
+                    <!-- Karteikarten Widget -->
                     <div class="widget">
-                        <div class="flashcard" id="flashcardDetail" onclick="flipCard('flashcardDetail')">
-                            <div class="flashcard-inner" id="flashcardInnerDetail">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">🎴</span>
+                                <span>Karteikarten lernen</span>
+                            </div>
+                        </div>
+                        <div class="flashcard" id="flashcard" onclick="flipCard('flashcard')">
+                            <div class="flashcard-inner" id="flashcardInner">
                                 <div class="flashcard-front">
                                     <p><strong>Frage:</strong> Was ist ein Automat?</p>
                                 </div>
@@ -996,304 +783,598 @@ $user_id = $_SESSION['user_id'];
                             </div>
                         </div>
                         <div class="flashcard-nav">
-                            <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();">← Zurück</button>
-                            <span style="color: var(--color-text-secondary);" id="cardCounter">Karte 1 von 5</span>
-                            <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();">Weiter →</button>
+                            <button class="flashcard-btn" onclick="previousCard(event);">Zurück</button>
+                            <button class="flashcard-btn" onclick="nextCard(event);">Weiter</button>
                         </div>
                     </div>
-                </div>
 
-                <!-- Dateien Detail View -->
-                <div id="files" class="view-content" style="display: none;">
-                    <div class="content-header">
-                        <h1>📁 Dateien</h1>
-                        <p>Alle deine Lernmaterialien</p>
-                    </div>
+                    <!-- Dateien Widget -->
                     <div class="widget">
                         <div class="widget-header">
-                            <div class="widget-title">Datei hochladen</div>
+                            <div class="widget-title">
+                                <span class="widget-icon">📁</span>
+                                <span>Letzte Dateien</span>
+                            </div>
                         </div>
-                        <div class="input-group">
-                            <input type="text" id="fileName" placeholder="Dateiname...">
-                            <select id="fileType">
-                                <option value="📄">Dokument</option>
-                                <option value="📊">Tabelle</option>
-                                <option value="🎥">Video</option>
-                                <option value="🖼️">Bild</option>
-                            </select>
-                            <button class="btn-primary" onclick="addFile()">Hinzufügen</button>
+                        <div class="files-list" id="filesList">
+                            <div class="file-item">
+                                <span class="file-icon">📄</span>
+                                <div class="file-info">
+                                    <div class="file-name">InformatikKlausurVorbereitung.pdf</div>
+                                    <div class="file-meta">Hochgeladen vor 2 Tagen · 2.3 MB</div>
+                                </div>
+                            </div>
+                            <div class="file-item">
+                                <span class="file-icon">📊</span>
+                                <div class="file-info">
+                                    <div class="file-name">MatheFormelsammlung.xlsx</div>
+                                    <div class="file-meta">Hochgeladen vor 5 Tagen · 1.1 MB</div>
+                                </div>
+                            </div>
+                            <div class="file-item">
+                                <span class="file-icon">🎥</span>
+                                <div class="file-info">
+                                    <div class="file-name">PhysikExperimentVideo.mp4</div>
+                                    <div class="file-meta">Hochgeladen vor 1 Woche · 45 MB</div>
+                                </div>
+                            </div>
                         </div>
-                        <div class="files-list" id="filesDetailList" style="margin-top: 1.5rem;"></div>
                     </div>
-                </div>
 
-                <!-- Admin Detail View -->
-                <div id="admin" class="view-content" style="display: none;">
-                    <div class="content-header">
-                        <h1>⚙️ Admin Panel</h1>
-                        <p>Systemverwaltung und Statistiken</p>
-                    </div>
-                    <div class="dashboard-grid">
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">Statistiken</div>
-                            </div>
-                            <div class="admin-stats">
-                                <div class="stat-card">
-                                    <div class="stat-value">156</div>
-                                    <div class="stat-label">Aktive User</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">24</div>
-                                    <div class="stat-label">Kurse</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">89%</div>
-                                    <div class="stat-label">Abschlussrate</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">4.8</div>
-                                    <div class="stat-label">Ø Bewertung</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">1.2k</div>
-                                    <div class="stat-label">Lernstunden</div>
-                                </div>
-                                <div class="stat-card">
-                                    <div class="stat-value">342</div>
-                                    <div class="stat-label">Abschlüsse</div>
-                                </div>
+                    <!-- Admin Panel Widget -->
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⚙️</span>
+                                <span>Admin Statistiken</span>
                             </div>
                         </div>
-                        <div class="widget">
-                            <div class="widget-header">
-                                <div class="widget-title">Systemeinstellungen</div>
+                        <div class="admin-stats">
+                            <div class="stat-card">
+                                <div class="stat-value">156</div>
+                                <div class="stat-label">Aktive User</div>
                             </div>
-                            <div class="input-group" style="flex-direction: column; gap: 1rem;">
-                                <button class="btn-primary" style="width: 100%;">Benutzer verwalten</button>
-                                <button class="btn-primary" style="width: 100%;">Kurse verwalten</button>
-                                <button class="btn-primary" style="width: 100%;">Berichte erstellen</button>
-                                <button class="btn-primary" style="width: 100%;">Einstellungen</button>
+                            <div class="stat-card">
+                                <div class="stat-value">24</div>
+                                <div class="stat-label">Kurse</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">89%</div>
+                                <div class="stat-label">Abschlussrate</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">4.8</div>
+                                <div class="stat-label">Bewertung</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <script>
-        // Theme Toggle
-        const themeToggle = document.getElementById('themeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const themeText = document.getElementById('themeText');
-        let isDarkMode = false;
-
-        themeToggle.addEventListener('click', () => {
-            isDarkMode = !isDarkMode;
-            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
-            themeIcon.textContent = isDarkMode ? '☀️' : '🌙';
-            themeText.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
-        });
-
-        // Navigation
-        const navItems = document.querySelectorAll('.nav-item');
-        const viewContents = document.querySelectorAll('.view-content');
-
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const viewId = item.getAttribute('data-view');
-                
-                navItems.forEach(nav => nav.classList.remove('active'));
-                item.classList.add('active');
-                
-                viewContents.forEach(view => {
-                    view.style.display = 'none';
-                });
-                
-                const targetView = document.getElementById(viewId);
-                if (targetView) {
-                    targetView.style.display = 'block';
-                }
-            });
-        });
-
-        // To-Do Functionality
-        const todos = [
-            { text: 'Mathematik Hausaufgaben fertigstellen', priority: 'high', completed: false },
-            { text: 'Physik Referat vorbereiten', priority: 'medium', completed: false },
-            { text: 'Karteikarten für Informatik erstellen', priority: 'low', completed: false }
-        ];
-
-        function renderTodos() {
-            const todoList = document.getElementById('todosDetailList');
-            if (!todoList) return;
-            
-            todoList.innerHTML = todos.map((todo, index) => `
-                <div class="todo-item">
-                    <div class="todo-checkbox ${todo.completed ? 'checked' : ''}" onclick="toggleTodoByIndex(${index})"></div>
-                    <div class="todo-text ${todo.completed ? 'completed' : ''}">${todo.text}</div>
-                    <div class="todo-priority priority-${todo.priority}"></div>
+            <!-- Stundenplan Detail View -->
+            <div id="timetable" class="view-content" style="display: none;">
+                <div class="content-header">
+                    <h1>Stundenplan</h1>
+                    <p>Deine Wochenübersicht</p>
                 </div>
-            `).join('');
-        }
+                <div class="widget">
+                    <div class="timetable">
+                        <div class="timetable-day">
+                            <span class="day-name">Montag</span>
+                            <div class="day-classes">
+                                <span class="class-badge">Mathematik</span>
+                                <span class="class-badge">Informatik</span>
+                                <span class="class-badge">Physik</span>
+                            </div>
+                        </div>
+                        <div class="timetable-day">
+                            <span class="day-name">Dienstag</span>
+                            <div class="day-classes">
+                                <span class="class-badge">Deutsch</span>
+                                <span class="class-badge">Englisch</span>
+                                <span class="class-badge">Ethik</span>
+                            </div>
+                        </div>
+                        <div class="timetable-day">
+                            <span class="day-name">Mittwoch</span>
+                            <div class="day-classes">
+                                <span class="class-badge">Mathematik</span>
+                                <span class="class-badge">Informatik</span>
+                            </div>
+                        </div>
+                        <div class="timetable-day">
+                            <span class="day-name">Donnerstag</span>
+                            <div class="day-classes">
+                                <span class="class-badge">Physik</span>
+                                <span class="class-badge">Ethik</span>
+                                <span class="class-badge">Englisch</span>
+                            </div>
+                        </div>
+                        <div class="timetable-day">
+                            <span class="day-name">Freitag</span>
+                            <div class="day-classes">
+                                <span class="class-badge">Deutsch</span>
+                                <span class="class-badge">Mathematik</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        function toggleTodo(element) {
-            element.classList.toggle('checked');
-            const textElement = element.nextElementSibling;
-            textElement.classList.toggle('completed');
-        }
+            <!-- Noten Detail View -->
+            <div id="grades" class="view-content" style="display: none;">
+                <div class="content-header">
+                    <h1>Notenübersicht</h1>
+                    <p>Alle deine Fächer und Noten</p>
+                </div>
+                <div class="widget">
+                    <div class="widget-header">
+                        <div class="widget-title">
+                            <span class="widget-icon">➕</span>
+                            <span>Note hinzufügen</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="gradeSubject" placeholder="Fach eingeben...">
+                        <input type="number" id="gradeValue" placeholder="Note 0-15" min="0" max="15">
+                        <button class="btn-primary" onclick="addGrade()">Hinzufügen</button>
+                    </div>
+                    <div class="grades-list" id="gradesList" style="margin-top: 1.5rem;">
+                        <div class="grade-item">
+                            <span class="grade-subject">Informatik</span>
+                            <span class="grade-value">13 P</span>
+                        </div>
+                        <div class="grade-item">
+                            <span class="grade-subject">Mathematik</span>
+                            <span class="grade-value">12 P</span>
+                        </div>
+                        <div class="grade-item">
+                            <span class="grade-subject">Physik</span>
+                            <span class="grade-value warning">10 P</span>
+                        </div>
+                        <div class="grade-item">
+                            <span class="grade-subject">Deutsch</span>
+                            <span class="grade-value">11 P</span>
+                        </div>
+                        <div class="grade-item">
+                            <span class="grade-subject">Englisch</span>
+                            <span class="grade-value">14 P</span>
+                        </div>
+                        <div class="grade-item">
+                            <span class="grade-subject">Ethik</span>
+                            <span class="grade-value">12 P</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        function toggleTodoByIndex(index) {
-            todos[index].completed = !todos[index].completed;
+            <!-- To-Dos Detail View -->
+            <div id="todos" class="view-content" style="display: none;">
+                <div class="content-header">
+                    <h1>To-Do Liste</h1>
+                    <p>Verwalte deine Aufgaben</p>
+                </div>
+                <div class="widget">
+                    <div class="widget-header">
+                        <div class="widget-title">
+                            <span class="widget-icon">➕</span>
+                            <span>Neue Aufgabe</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="todoInput" placeholder="Aufgabe eingeben...">
+                        <select id="todoPriority">
+                            <option value="low">Niedrig</option>
+                            <option value="medium">Mittel</option>
+                            <option value="high">Hoch</option>
+                        </select>
+                        <button class="btn-primary" onclick="addTodo()">Hinzufügen</button>
+                    </div>
+                    <div class="todo-list" id="todosDetailList" style="margin-top: 1.5rem;"></div>
+                </div>
+            </div>
+
+            <!-- Karteikarten Detail View -->
+            <div id="flashcards" class="view-content" style="display: none;">
+                <div class="content-header">
+                    <h1>Karteikarten</h1>
+                    <p>Lerne mit deinen Karteikarten</p>
+                </div>
+                <div class="widget">
+                    <div class="flashcard" id="flashcardDetail" onclick="flipCard('flashcardDetail')">
+                        <div class="flashcard-inner" id="flashcardInnerDetail">
+                            <div class="flashcard-front">
+                                <p><strong>Frage:</strong> Was ist ein Automat?</p>
+                            </div>
+                            <div class="flashcard-back">
+                                <p>Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flashcard-nav">
+                        <button class="flashcard-btn" onclick="previousCard(event);">Zurück</button>
+                        <span style="color: var(--color-text-secondary);" id="cardCounter">Karte 1 von 5</span>
+                        <button class="flashcard-btn" onclick="nextCard(event);">Weiter</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dateien Detail View -->
+            <div id="files" class="view-content" style="display: none;">
+                <div class="content-header">
+                    <h1>Dateien</h1>
+                    <p>Alle deine Lernmaterialien</p>
+                </div>
+                <div class="widget">
+                    <div class="widget-header">
+                        <div class="widget-title">
+                            <span class="widget-icon">📤</span>
+                            <span>Datei hochladen</span>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="fileName" placeholder="Dateiname...">
+                        <select id="fileType">
+                            <option value="📄">Dokument</option>
+                            <option value="📊">Tabelle</option>
+                            <option value="🎥">Video</option>
+                            <option value="🖼️">Bild</option>
+                        </select>
+                        <button class="btn-primary" onclick="addFile()">Hinzufügen</button>
+                    </div>
+                    <div class="files-list" id="filesDetailList" style="margin-top: 1.5rem;"></div>
+                </div>
+            </div>
+
+            <!-- Admin Detail View -->
+            <div id="admin" class="view-content" style="display: none;">
+                <div class="content-header">
+                    <h1>Admin Panel</h1>
+                    <p>Systemverwaltung und Statistiken</p>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">📊</span>
+                                <span>Statistiken</span>
+                            </div>
+                        </div>
+                        <div class="admin-stats">
+                            <div class="stat-card">
+                                <div class="stat-value">156</div>
+                                <div class="stat-label">Aktive User</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">24</div>
+                                <div class="stat-label">Kurse</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">89%</div>
+                                <div class="stat-label">Abschlussrate</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">4.8</div>
+                                <div class="stat-label">Bewertung</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">1.2k</div>
+                                <div class="stat-label">Lernstunden</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-value">342</div>
+                                <div class="stat-label">Abschlüsse</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">
+                                <span class="widget-icon">⚙️</span>
+                                <span>Systemeinstellungen</span>
+                            </div>
+                        </div>
+                        <div class="input-group" style="flex-direction: column; gap: 1rem;">
+                            <button class="btn-primary" style="width: 100%;">Benutzer verwalten</button>
+                            <button class="btn-primary" style="width: 100%;">Kurse verwalten</button>
+                            <button class="btn-primary" style="width: 100%;">Berichte erstellen</button>
+                            <button class="btn-primary" style="width: 100%;">Einstellungen</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    const API_BASE = "http://localhost:8000";
+    const USER_ID = "<?php echo htmlspecialchars($userid, ENT_QUOTES, 'UTF-8'); ?>";
+
+    // Theme Toggle
+    const themeToggle = document.getElementById("themeToggle");
+    const themeIcon = document.getElementById("themeIcon");
+    const themeText = document.getElementById("themeText");
+    let isDarkMode = false;
+
+    themeToggle.addEventListener("click", () => {
+        isDarkMode = !isDarkMode;
+        document.body.setAttribute("data-theme", isDarkMode ? "dark" : "light");
+        themeIcon.textContent = isDarkMode ? "🌙" : "🌞";
+        themeText.textContent = isDarkMode ? "Light Mode" : "Dark Mode";
+    });
+
+    // Navigation
+    const navItems = document.querySelectorAll(".nav-item");
+    const viewContents = document.querySelectorAll(".view-content");
+
+    navItems.forEach(item => {
+        item.addEventListener("click", () => {
+            const viewId = item.getAttribute("data-view");
+
+            navItems.forEach(nav => nav.classList.remove("active"));
+            item.classList.add("active");
+
+            viewContents.forEach(view => {
+                view.style.display = "none";
+            });
+
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = "block";
+            }
+        });
+    });
+
+    // To-Do Data
+    let todos = [];
+
+    async function loadTodos() {
+        try {
+            const res = await fetch(`${API_BASE}/todos/${USER_ID}`);
+            if (!res.ok) throw new Error("Fehler beim Laden der To-Dos");
+            const data = await res.json();
+            todos = data.map(t => ({
+                id: t.id,
+                title: t.title,
+                subject: t.subject || "",
+                duedate: t.duedate || "",
+                priority: t.priority || "low",
+                done: !!t.done
+            }));
             renderTodos();
+        } catch (e) {
+            console.error(e);
         }
+    }
 
-        function addTodo() {
-            const input = document.getElementById('todoInput');
-            const priority = document.getElementById('todoPriority');
-            
-            if (input.value.trim()) {
-                todos.push({
-                    text: input.value.trim(),
-                    priority: priority.value,
-                    completed: false
-                });
-                input.value = '';
-                renderTodos();
-            }
+    function renderTodos() {
+        const todoListOverview = document.getElementById("todoList");
+        const todoListDetail = document.getElementById("todosDetailList");
+
+        const html = todos.map(todo => `
+            <div class="todo-item">
+                <div class="todo-checkbox ${todo.done ? "checked" : ""}"
+                     onclick="toggleTodoDone('${todo.id}')"></div>
+                <div class="todo-text ${todo.done ? "completed" : ""}">
+                    ${todo.title}
+                    ${todo.subject ? `<span style="color: var(--color-text-muted);"> (${todo.subject})</span>` : ""}
+                    ${todo.duedate ? `<span style="color: var(--color-text-muted);"> – fällig: ${todo.duedate}</span>` : ""}
+                </div>
+                <div class="todo-priority priority-${todo.priority}"></div>
+                <button class="btn-icon" onclick="deleteTodo('${todo.id}')">✕</button>
+            </div>
+        `).join("");
+
+        if (todoListOverview) todoListOverview.innerHTML = html;
+        if (todoListDetail) todoListDetail.innerHTML = html;
+    }
+
+    async function addTodo() {
+        const input = document.getElementById("todoInput");
+        const priority = document.getElementById("todoPriority");
+
+        if (!input.value.trim()) return;
+
+        const payload = {
+            title: input.value.trim(),
+            subject: "",
+            duedate: "",
+            priority: priority.value
+        };
+
+        try {
+            const res = await fetch(`${API_BASE}/todos/${USER_ID}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error("Fehler beim Erstellen des To-Dos");
+            input.value = "";
+            await loadTodos();
+        } catch (e) {
+            console.error(e);
         }
+    }
 
+    async function deleteTodo(todoId) {
+        try {
+            const res = await fetch(`${API_BASE}/todos/${USER_ID}/${todoId}`, {
+                method: "DELETE"
+            });
+            if (!res.ok) throw new Error("Fehler beim Löschen des To-Dos");
+            await loadTodos();
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // Optional: nur optisch toggeln, solange Backend kein Update-Endpunkt hat
+    function toggleTodoDone(todoId) {
+        const todo = todos.find(t => t.id === todoId);
+        if (!todo) return;
+        todo.done = !todo.done;
         renderTodos();
+        // Wenn du den done-Status im Backend speichern willst, ergänzen wir einen PUT-Endpunkt im FastAPI.
+    }
 
-        // Flashcard Functionality
-        let currentCard = 0;
-        const flashcards = [
-            { question: 'Was ist ein Automat?', answer: 'Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen' },
-            { question: 'Was ist eine reguläre Sprache?', answer: 'Eine Sprache, die von einem endlichen Automaten erkannt werden kann' },
-            { question: 'Was ist der Unterschied zwischen DFA und NFA?', answer: 'DFA ist deterministisch, NFA nicht-deterministisch' },
-            { question: 'Was ist die Chomsky-Hierarchie?', answer: 'Eine Klassifizierung formaler Sprachen in vier Typen' },
-            { question: 'Was ist ein Pumping-Lemma?', answer: 'Ein Hilfsmittel zum Beweis, dass eine Sprache nicht regulär ist' }
-        ];
-
-        function flipCard(cardId) {
-            const card = document.getElementById(cardId);
-            if (card) {
-                card.classList.toggle('flipped');
-            }
+    // Flashcard Functionality (wie in deiner Datei)
+    let currentCard = 0;
+    const flashcards = [
+        {
+            question: "Was ist ein Automat?",
+            answer: "Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen"
+        },
+        {
+            question: "Was ist eine reguläre Sprache?",
+            answer: "Eine Sprache, die von einem endlichen Automaten erkannt werden kann"
+        },
+        {
+            question: "Was ist der Unterschied zwischen DFA und NFA?",
+            answer: "DFA ist deterministisch, NFA nicht-deterministisch"
+        },
+        {
+            question: "Was ist die Chomsky-Hierarchie?",
+            answer: "Eine Klassifizierung formaler Sprachen in vier Typen"
+        },
+        {
+            question: "Was ist ein Pumping-Lemma?",
+            answer: "Ein Hilfsmittel zum Beweis, dass eine Sprache nicht regulär ist"
         }
+    ];
 
-        function nextCard() {
-            currentCard = (currentCard + 1) % flashcards.length;
-            updateFlashcard();
-            updateCardCounter();
+    function flipCard(cardId) {
+        const card = document.getElementById(cardId);
+        if (card) {
+            card.classList.toggle("flipped");
         }
+    }
 
-        function previousCard() {
-            currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
-            updateFlashcard();
-            updateCardCounter();
+    function nextCard(event) {
+        if (event) event.stopPropagation();
+        currentCard = (currentCard + 1) % flashcards.length;
+        updateFlashcard();
+        updateCardCounter();
+    }
+
+    function previousCard(event) {
+        if (event) event.stopPropagation();
+        currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+        updateFlashcard();
+        updateCardCounter();
+    }
+
+    function updateCardCounter() {
+        const counter = document.getElementById("cardCounter");
+        if (counter) {
+            counter.textContent = `Karte ${currentCard + 1} von ${flashcards.length}`;
         }
+    }
 
-        function updateCardCounter() {
-            const counter = document.getElementById('cardCounter');
-            if (counter) {
-                counter.textContent = `Karte ${currentCard + 1} von ${flashcards.length}`;
-            }
-        }
+    function updateFlashcard() {
+        const card = flashcards[currentCard];
+        const flashcardElement = document.getElementById("flashcard");
+        const flashcardDetail = document.getElementById("flashcardDetail");
 
-        function updateFlashcard() {
-            const card = flashcards[currentCard];
-            const flashcardElement = document.getElementById('flashcard');
-            const flashcardDetail = document.getElementById('flashcardDetail');
-            
-            // Remove flipped state
-            if (flashcardElement) flashcardElement.classList.remove('flipped');
-            if (flashcardDetail) flashcardDetail.classList.remove('flipped');
-            
-            // Update overview card
-            if (flashcardElement) {
-                const front = flashcardElement.querySelector('.flashcard-front');
-                const back = flashcardElement.querySelector('.flashcard-back');
+        if (flashcardElement) {
+            flashcardElement.classList.remove("flipped");
+            const front = flashcardElement.querySelector(".flashcard-front");
+            const back = flashcardElement.querySelector(".flashcard-back");
+            if (front && back) {
                 front.innerHTML = `<p><strong>Frage:</strong> ${card.question}</p>`;
                 back.innerHTML = `<p>${card.answer}</p>`;
             }
-            
-            // Update detail view card
-            if (flashcardDetail) {
-                const frontDetail = flashcardDetail.querySelector('.flashcard-front');
-                const backDetail = flashcardDetail.querySelector('.flashcard-back');
+        }
+
+        if (flashcardDetail) {
+            flashcardDetail.classList.remove("flipped");
+            const frontDetail = flashcardDetail.querySelector(".flashcard-front");
+            const backDetail = flashcardDetail.querySelector(".flashcard-back");
+            if (frontDetail && backDetail) {
                 frontDetail.innerHTML = `<p><strong>Frage:</strong> ${card.question}</p>`;
                 backDetail.innerHTML = `<p>${card.answer}</p>`;
             }
         }
+    }
 
-        // Grades Functionality
-        function addGrade() {
-            const subjectInput = document.getElementById('gradeSubject');
-            const valueInput = document.getElementById('gradeValue');
-            const gradesList = document.getElementById('gradesList');
-            
-            if (subjectInput.value.trim() && valueInput.value) {
-                const value = parseInt(valueInput.value);
-                let colorClass = '';
-                
-                if (value >= 12) colorClass = '';
-                else if (value >= 9) colorClass = 'warning';
-                else colorClass = 'danger';
-                
-                const gradeItem = document.createElement('div');
-                gradeItem.className = 'grade-item';
-                gradeItem.innerHTML = `
-                    <span class="grade-subject">${subjectInput.value}</span>
-                    <span class="grade-value ${colorClass}">${value} P</span>
-                `;
-                
-                gradesList.appendChild(gradeItem);
-                
-                subjectInput.value = '';
-                valueInput.value = '';
-            }
+    // Grades Functionality (wie gehabt)
+    function addGrade() {
+        const subjectInput = document.getElementById("gradeSubject");
+        const valueInput = document.getElementById("gradeValue");
+        const gradesList = document.getElementById("gradesList");
+
+        if (subjectInput.value.trim() && valueInput.value) {
+            const value = parseInt(valueInput.value);
+            let colorClass = "";
+            if (value >= 12) colorClass = "";
+            else if (value >= 9) colorClass = "warning";
+            else colorClass = "danger";
+
+            const gradeItem = document.createElement("div");
+            gradeItem.className = "grade-item";
+            gradeItem.innerHTML = `
+                <span class="grade-subject">${subjectInput.value}</span>
+                <span class="grade-value ${colorClass}">${value} P</span>
+            `;
+            gradesList.appendChild(gradeItem);
+            subjectInput.value = "";
+            valueInput.value = "";
         }
+    }
 
-        // Files Functionality
-        const files = [
-            { name: 'Informatik_Klausur_Vorbereitung.pdf', icon: '📄', meta: 'Hochgeladen vor 2 Tagen • 2.3 MB' },
-            { name: 'Mathe_Formelsammlung.xlsx', icon: '📊', meta: 'Hochgeladen vor 5 Tagen • 1.1 MB' },
-            { name: 'Physik_Experiment_Video.mp4', icon: '🎥', meta: 'Hochgeladen vor 1 Woche • 45 MB' }
-        ];
+    // Dateien Data + Render
+    const files = [
+        {
+            name: "InformatikKlausurVorbereitung.pdf",
+            icon: "📄",
+            meta: "Hochgeladen vor 2 Tagen · 2.3 MB"
+        },
+        {
+            name: "MatheFormelsammlung.xlsx",
+            icon: "📊",
+            meta: "Hochgeladen vor 5 Tagen · 1.1 MB"
+        },
+        {
+            name: "PhysikExperimentVideo.mp4",
+            icon: "🎥",
+            meta: "Hochgeladen vor 1 Woche · 45 MB"
+        }
+    ];
 
-        function renderFiles() {
-            const filesList = document.getElementById('filesDetailList');
-            if (!filesList) return;
-            
-            filesList.innerHTML = files.map(file => `
-                <div class="file-item">
-                    <span class="file-icon">${file.icon}</span>
-                    <div class="file-info">
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-meta">${file.meta}</div>
-                    </div>
+    function renderFiles() {
+        const filesDetailList = document.getElementById("filesDetailList");
+        if (!filesDetailList) return;
+
+        filesDetailList.innerHTML = files.map(file => `
+            <div class="file-item">
+                <span class="file-icon">${file.icon}</span>
+                <div class="file-info">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-meta">${file.meta}</div>
                 </div>
-            `).join('');
-        }
+            </div>
+        `).join("");
+    }
 
-        function addFile() {
-            const nameInput = document.getElementById('fileName');
-            const typeSelect = document.getElementById('fileType');
-            
-            if (nameInput.value.trim()) {
-                files.push({
-                    name: nameInput.value.trim(),
-                    icon: typeSelect.value,
-                    meta: 'Gerade hochgeladen • 0 MB'
-                });
-                nameInput.value = '';
-                renderFiles();
-            }
-        }
+    function addFile() {
+        const nameInput = document.getElementById("fileName");
+        const typeSelect = document.getElementById("fileType");
+        if (!nameInput.value.trim()) return;
 
+        files.push({
+            name: nameInput.value.trim(),
+            icon: typeSelect.value,
+            meta: "Gerade hochgeladen · 0 MB"
+        });
+        nameInput.value = "";
         renderFiles();
-    </script>
+    }
+
+    // Initial
+    updateFlashcard();
+    updateCardCounter();
+    renderFiles();
+    loadTodos();
+</script>
 </body>
 </html>
