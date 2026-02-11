@@ -1,5 +1,5 @@
-<b>-Layout für LeanHub verbessert bzw ausgebaut und verstanden. 
-Perplexity chat dafür:</b>
+*-Layout für LeanHub verbessert bzw ausgebaut und verstanden. 
+Perplexity chat dafür:*
 
 
 
@@ -116,14 +116,14 @@ Die Karteikarten nutzen jetzt CSS 3D-Transformationen für eine flüssige, moder
 
 
 
-!!!!
+*!!!!
 
 
 
 Auf Basis darauf ein backend erstellt, welches mit python läuft und alle bisher überlegten Funktionen grob abdeckt. 
 
 
-Chat mit ChatGPT, der chat mit perplexity war unbrauchbar:
+Chat mit ChatGPT, der chat mit perplexity war unbrauchbar:*
 
 
 
