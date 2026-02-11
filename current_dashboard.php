@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LearnHub Dashboard</title>
+    <style>
+        :root {
+            --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-family-mono: 'Courier New', monospace;
+            
+            /* Light Mode Colors */
+            --color-bg-primary: #f8f9fa;
+            --color-bg-secondary: #ffffff;
+            --color-bg-surface: #ffffff;
+            --color-bg-hover: #f1f3f5;
+            --color-text-primary: #1a1a1a;
+            --color-text-secondary: #6c757d;
+            --color-text-muted: #adb5bd;
+            --color-primary: #0d6efd;
+            --color-primary-hover: #0b5ed7;
+            --color-primary-active: #0a58ca;
+            --color-border: #dee2e6;
+            --color-border-light: #e9ecef;
+            --color-success: #198754;
+            --color-warning: #ffc107;
+            --color-danger: #dc3545;
+            --color-info: #0dcaf0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --color-bg-primary: #0f172a;
+            --color-bg-secondary: #1e293b;
+            --color-bg-surface: #1e293b;
+            --color-bg-hover: #334155;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-muted: #94a3b8;
+            --color-primary: #38bdf8;
+            --color-primary-hover: #0ea5e9;
+            --color-primary-active: #0284c7;
+            --color-border: #334155;
+            --color-border-light: #475569;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-info: #06b6d4;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background-color: var(--color-bg-secondary);
+            border-right: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--color-text-muted);
+            letter-spacing: 0.05em;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: var(--color-text-secondary);
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background-color: var(--color-bg-hover);
+            color: var(--color-text-primary);
+        }
+
+        .nav-item.active {
+            background-color: var(--color-bg-hover);
+            color: var(--color-primary);
+            border-left-color: var(--color-primary);
+            font-weight: 500;
+        }
+
+        .nav-icon {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .theme-toggle, .account-btn {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            color: var(--color-text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .theme-toggle:hover, .account-btn:hover {
+            background-color: var(--color-bg-hover);
+            border-color: var(--color-primary);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+
+        .content-header {
+            margin-bottom: 2rem;
+        }
+
+        .content-header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-header p {
+            color: var(--color-text-secondary);
+            font-size: 1rem;
+        }
+
+        /* Bento Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .widget {
+            background-color: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .widget:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .widget-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .widget-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .widget-icon {
+            font-size: 1.3rem;
+        }
+
+        .widget-action {
+            background: transparent;
+            border: none;
+            color: var(--color-text-secondary);
+            cursor: pointer;
+            padding: 0.25rem;
+            transition: color 0.2s;
+        }
+
+        .widget-action:hover {
+            color: var(--color-primary);
+        }
+
+        /* Stundenplan Widget */
+        .timetable {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .timetable-day {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+
+        .day-name {
+            font-weight: 600;
+            min-width: 80px;
+            color: var(--color-primary);
+        }
+
+        .day-classes {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .class-badge {
+            background-color: var(--color-primary);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        /* Noten Widget */
+        .grades-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .grade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+        }
+
+        .grade-subject {
+            font-weight: 500;
+        }
+
+        .grade-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            background-color: var(--color-success);
+            color: white;
+        }
+
+        .grade-value.warning {
+            background-color: var(--color-warning);
+        }
+
+        .grade-value.danger {
+            background-color: var(--color-danger);
+        }
+
+        /* To-Do Widget */
+        .todo-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .todo-item:hover {
+            background-color: var(--color-border);
+        }
+
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--color-border);
+            border-radius: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .todo-checkbox.checked {
+            background-color: var(--color-success);
+            border-color: var(--color-success);
+        }
+
+        .todo-text {
+            flex: 1;
+            font-size: 0.9rem;
+        }
+
+        .todo-text.completed {
+            text-decoration: line-through;
+            color: var(--color-text-muted);
+        }
+
+        .todo-priority {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .priority-high { background-color: var(--color-danger); }
+        .priority-medium { background-color: var(--color-warning); }
+        .priority-low { background-color: var(--color-info); }
+
+        /* Karteikarten Widget */
+        .flashcard {
+            perspective: 1000px;
+            height: 200px;
+            cursor: pointer;
+        }
+
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+
+        .flashcard.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+
+        .flashcard-front, .flashcard-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .flashcard-back {
+            transform: rotateY(180deg);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
+            color: white;
+        }
+
+        .flashcard-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 1rem;
+        }
+
+        .flashcard-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .flashcard-btn:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        /* Dateien Widget */
+        .files-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .file-item:hover {
+            background-color: var(--color-border);
+        }
+
+        .file-icon {
+            font-size: 1.5rem;
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .file-meta {
+            font-size: 0.75rem;
+            color: var(--color-text-muted);
+        }
+
+        /* Admin Panel Widget */
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            padding: 1rem;
+            background-color: var(--color-bg-hover);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--color-text-secondary);
+        }
+
+        /* Input Styles */
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        input[type="text"], input[type="number"], select {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            font-size: 0.9rem;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .btn-primary {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        .btn-icon {
+            padding: 0.5rem;
+            background: transparent;
+            border: 1px solid var(--color-border);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-icon:hover {
+            background-color: var(--color-bg-hover);
+            border-color: var(--color-primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -260px;
+                z-index: 1000;
+                height: 100vh;
+            }
+
+            .sidebar.open {
+                transform: translateX(260px);
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--color-bg-primary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--color-border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--color-text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="logo-icon">LH</div>
+                    <span>LearnHub</span>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">Dashboard</div>
+                    <a class="nav-item active" data-view="overview">
+                        <span class="nav-icon">📊</span>
+                        <span>Übersicht</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">Module</div>
+                    <a class="nav-item" data-view="timetable">
+                        <span class="nav-icon">📅</span>
+                        <span>Stundenplan</span>
+                    </a>
+                    <a class="nav-item" data-view="grades">
+                        <span class="nav-icon">📝</span>
+                        <span>Noten</span>
+                    </a>
+                    <a class="nav-item" data-view="todos">
+                        <span class="nav-icon">✅</span>
+                        <span>To-Dos</span>
+                    </a>
+                    <a class="nav-item" data-view="flashcards">
+                        <span class="nav-icon">🎴</span>
+                        <span>Karteikarten</span>
+                    </a>
+                    <a class="nav-item" data-view="files">
+                        <span class="nav-icon">📁</span>
+                        <span>Dateien</span>
+                    </a>
+                    <a class="nav-item" data-view="admin">
+                        <span class="nav-icon">⚙️</span>
+                        <span>Admin Panel</span>
+                    </a>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="theme-toggle" id="themeToggle">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText" style="margin-left: 0.5rem;">Dark Mode</span>
+                </button>
+                <button class="account-btn">
+                    <span>👤</span>
+                    <span style="margin-left: 0.5rem;">Account</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="contentArea">
+                <!-- Overview Content -->
+                <div id="overview" class="view-content">
+                    <div class="content-header">
+                        <h1>Willkommen zurück! 👋</h1>
+                        <p>Hier ist deine Lernübersicht für heute</p>
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <!-- Stundenplan Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">📅</span>
+                                    Heute im Stundenplan
+                                </div>
+                                <button class="widget-action">→</button>
+                            </div>
+                            <div class="timetable">
+                                <div class="timetable-day">
+                                    <span class="day-name">08:00</span>
+                                    <div class="day-classes">
+                                        <span class="class-badge">Mathematik</span>
+                                    </div>
+                                </div>
+                                <div class="timetable-day">
+                                    <span class="day-name">09:45</span>
+                                    <div class="day-classes">
+                                        <span class="class-badge">Informatik</span>
+                                    </div>
+                                </div>
+                                <div class="timetable-day">
+                                    <span class="day-name">11:30</span>
+                                    <div class="day-classes">
+                                        <span class="class-badge">Physik</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Noten Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">📝</span>
+                                    Aktuelle Noten
+                                </div>
+                                <button class="widget-action">→</button>
+                            </div>
+                            <div class="grades-list">
+                                <div class="grade-item">
+                                    <span class="grade-subject">Informatik</span>
+                                    <span class="grade-value">13 P</span>
+                                </div>
+                                <div class="grade-item">
+                                    <span class="grade-subject">Mathematik</span>
+                                    <span class="grade-value">12 P</span>
+                                </div>
+                                <div class="grade-item">
+                                    <span class="grade-subject">Physik</span>
+                                    <span class="grade-value warning">10 P</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- To-Do Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">✅</span>
+                                    Offene Aufgaben
+                                </div>
+                                <button class="widget-action">→</button>
+                            </div>
+                            <div class="todo-list" id="todoList">
+                                <div class="todo-item">
+                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                    <div class="todo-text">Mathematik Hausaufgaben fertigstellen</div>
+                                    <div class="todo-priority priority-high"></div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                    <div class="todo-text">Physik Referat vorbereiten</div>
+                                    <div class="todo-priority priority-medium"></div>
+                                </div>
+                                <div class="todo-item">
+                                    <div class="todo-checkbox" onclick="toggleTodo(this)"></div>
+                                    <div class="todo-text">Karteikarten für Informatik erstellen</div>
+                                    <div class="todo-priority priority-low"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Karteikarten Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">🎴</span>
+                                    Karteikarten lernen
+                                </div>
+                                <button class="widget-action">→</button>
+                            </div>
+                            <div class="flashcard" id="flashcard" onclick="flipCard('flashcard')">
+                                <div class="flashcard-inner" id="flashcardInner">
+                                    <div class="flashcard-front">
+                                        <p><strong>Frage:</strong> Was ist ein Automat?</p>
+                                    </div>
+                                    <div class="flashcard-back">
+                                        <p>Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flashcard-nav">
+                                <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();">← Zurück</button>
+                                <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();">Weiter →</button>
+                            </div>
+                        </div>
+
+                        <!-- Dateien Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">📁</span>
+                                    Letzte Dateien
+                                </div>
+                                <button class="widget-action">→</button>
+                            </div>
+                            <div class="files-list">
+                                <div class="file-item">
+                                    <span class="file-icon">📄</span>
+                                    <div class="file-info">
+                                        <div class="file-name">Informatik_Klausur_Vorbereitung.pdf</div>
+                                        <div class="file-meta">Hochgeladen vor 2 Tagen • 2.3 MB</div>
+                                    </div>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">📊</span>
+                                    <div class="file-info">
+                                        <div class="file-name">Mathe_Formelsammlung.xlsx</div>
+                                        <div class="file-meta">Hochgeladen vor 5 Tagen • 1.1 MB</div>
+                                    </div>
+                                </div>
+                                <div class="file-item">
+                                    <span class="file-icon">🎥</span>
+                                    <div class="file-info">
+                                        <div class="file-name">Physik_Experiment_Video.mp4</div>
+                                        <div class="file-meta">Hochgeladen vor 1 Woche • 45 MB</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Admin Panel Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">⚙️</span>
+                                    Admin Statistiken
+                                </div>
+                                <button class="widget-action">→</button>
+                            </div>
+                            <div class="admin-stats">
+                                <div class="stat-card">
+                                    <div class="stat-value">156</div>
+                                    <div class="stat-label">Aktive User</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">24</div>
+                                    <div class="stat-label">Kurse</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">89%</div>
+                                    <div class="stat-label">Abschlussrate</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">4.8</div>
+                                    <div class="stat-label">Ø Bewertung</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stundenplan Detail View -->
+                <div id="timetable" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>📅 Stundenplan</h1>
+                        <p>Deine Wochenübersicht</p>
+                    </div>
+                    <div class="widget">
+                        <div class="timetable">
+                            <div class="timetable-day">
+                                <span class="day-name">Montag</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Mathematik</span>
+                                    <span class="class-badge">Informatik</span>
+                                    <span class="class-badge">Physik</span>
+                                </div>
+                            </div>
+                            <div class="timetable-day">
+                                <span class="day-name">Dienstag</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Deutsch</span>
+                                    <span class="class-badge">Englisch</span>
+                                    <span class="class-badge">Ethik</span>
+                                </div>
+                            </div>
+                            <div class="timetable-day">
+                                <span class="day-name">Mittwoch</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Mathematik</span>
+                                    <span class="class-badge">Informatik</span>
+                                </div>
+                            </div>
+                            <div class="timetable-day">
+                                <span class="day-name">Donnerstag</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Physik</span>
+                                    <span class="class-badge">Ethik</span>
+                                    <span class="class-badge">Englisch</span>
+                                </div>
+                            </div>
+                            <div class="timetable-day">
+                                <span class="day-name">Freitag</span>
+                                <div class="day-classes">
+                                    <span class="class-badge">Deutsch</span>
+                                    <span class="class-badge">Mathematik</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Noten Detail View -->
+                <div id="grades" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>📝 Notenübersicht</h1>
+                        <p>Alle deine Fächer und Noten</p>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">Note hinzufügen</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="gradeSubject" placeholder="Fach eingeben...">
+                            <input type="number" id="gradeValue" placeholder="Note (0-15)" min="0" max="15">
+                            <button class="btn-primary" onclick="addGrade()">Hinzufügen</button>
+                        </div>
+                        <div class="grades-list" id="gradesList" style="margin-top: 1.5rem;">
+                            <div class="grade-item">
+                                <span class="grade-subject">Informatik</span>
+                                <span class="grade-value">13 P</span>
+                            </div>
+                            <div class="grade-item">
+                                <span class="grade-subject">Mathematik</span>
+                                <span class="grade-value">12 P</span>
+                            </div>
+                            <div class="grade-item">
+                                <span class="grade-subject">Physik</span>
+                                <span class="grade-value warning">10 P</span>
+                            </div>
+                            <div class="grade-item">
+                                <span class="grade-subject">Deutsch</span>
+                                <span class="grade-value">11 P</span>
+                            </div>
+                            <div class="grade-item">
+                                <span class="grade-subject">Englisch</span>
+                                <span class="grade-value">14 P</span>
+                            </div>
+                            <div class="grade-item">
+                                <span class="grade-subject">Ethik</span>
+                                <span class="grade-value">12 P</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- To-Dos Detail View -->
+                <div id="todos" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>✅ To-Do Liste</h1>
+                        <p>Verwalte deine Aufgaben</p>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">Neue Aufgabe</div>
+                        </div>
+                        <div class="input-group">
+    <input type="text" id="todoInput" placeholder="Aufgabe eingeben...">
+
+    <select id="todoPriority">
+        <option value="low">Niedrig</option>
+        <option value="medium">Mittel</option>
+        <option value="high">Hoch</option>
+    </select>
+
+    <input type="date" id="todoDueDate">
+
+    <button class="btn-primary" id="addTodoBtn">Hinzufügen</button>
+</div>
+                        <div class="todo-list" id="todosDetailList" style="margin-top: 1.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Karteikarten Detail View -->
+                <div id="flashcards" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>🎴 Karteikarten</h1>
+                        <p>Lerne mit deinen Karteikarten</p>
+                    </div>
+                    <div class="widget">
+                        <div class="flashcard" id="flashcardDetail" onclick="flipCard('flashcardDetail')">
+                            <div class="flashcard-inner" id="flashcardInnerDetail">
+                                <div class="flashcard-front">
+                                    <p><strong>Frage:</strong> Was ist ein Automat?</p>
+                                </div>
+                                <div class="flashcard-back">
+                                    <p>Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flashcard-nav">
+                            <button class="flashcard-btn" onclick="previousCard(); event.stopPropagation();">← Zurück</button>
+                            <span style="color: var(--color-text-secondary);" id="cardCounter">Karte 1 von 5</span>
+                            <button class="flashcard-btn" onclick="nextCard(); event.stopPropagation();">Weiter →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dateien Detail View -->
+                <div id="files" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>📁 Dateien</h1>
+                        <p>Alle deine Lernmaterialien</p>
+                    </div>
+                    <div class="widget">
+                        <div class="widget-header">
+                            <div class="widget-title">Datei hochladen</div>
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="fileName" placeholder="Dateiname...">
+                            <select id="fileType">
+                                <option value="📄">Dokument</option>
+                                <option value="📊">Tabelle</option>
+                                <option value="🎥">Video</option>
+                                <option value="🖼️">Bild</option>
+                            </select>
+                            <button class="btn-primary" onclick="addFile()">Hinzufügen</button>
+                        </div>
+                        <div class="files-list" id="filesDetailList" style="margin-top: 1.5rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Admin Detail View -->
+                <div id="admin" class="view-content" style="display: none;">
+                    <div class="content-header">
+                        <h1>⚙️ Admin Panel</h1>
+                        <p>Systemverwaltung und Statistiken</p>
+                    </div>
+                    <div class="dashboard-grid">
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">Statistiken</div>
+                            </div>
+                            <div class="admin-stats">
+                                <div class="stat-card">
+                                    <div class="stat-value">156</div>
+                                    <div class="stat-label">Aktive User</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">24</div>
+                                    <div class="stat-label">Kurse</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">89%</div>
+                                    <div class="stat-label">Abschlussrate</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">4.8</div>
+                                    <div class="stat-label">Ø Bewertung</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">1.2k</div>
+                                    <div class="stat-label">Lernstunden</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value">342</div>
+                                    <div class="stat-label">Abschlüsse</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">Systemeinstellungen</div>
+                            </div>
+                            <div class="input-group" style="flex-direction: column; gap: 1rem;">
+                                <button class="btn-primary" style="width: 100%;">Benutzer verwalten</button>
+                                <button class="btn-primary" style="width: 100%;">Kurse verwalten</button>
+                                <button class="btn-primary" style="width: 100%;">Berichte erstellen</button>
+                                <button class="btn-primary" style="width: 100%;">Einstellungen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const themeText = document.getElementById('themeText');
+        let isDarkMode = false;
+
+        themeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.setAttribute('data-theme', isDarkMode ? 'dark' : 'light');
+            themeIcon.textContent = isDarkMode ? '☀️' : '🌙';
+            themeText.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
+        });
+
+        // Navigation
+        const navItems = document.querySelectorAll('.nav-item');
+        const viewContents = document.querySelectorAll('.view-content');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const viewId = item.getAttribute('data-view');
+                
+                navItems.forEach(nav => nav.classList.remove('active'));
+                item.classList.add('active');
+                
+                viewContents.forEach(view => {
+                    view.style.display = 'none';
+                });
+                
+                const targetView = document.getElementById(viewId);
+                if (targetView) {
+                    targetView.style.display = 'block';
+                }
+            });
+        });
+
+        // To-Do Functionality
+        
+const API_URL = "http://127.0.0.1:8000";
+const userId = "USER_ID_HIER_EINSETZEN"; // ← anpassen
+
+const todoList = document.getElementById("todoList");
+const addTodoBtn = document.getElementById("addTodoBtn");
+
+document.addEventListener("DOMContentLoaded", loadTodos);
+addTodoBtn.addEventListener("click", addTodo);
+
+// ==========================
+// TODOS LADEN
+// ==========================
+async function loadTodos() {
+    try {
+        const response = await fetch(`${API_URL}/todos/${userId}`);
+        const todos = await response.json();
+
+        todoList.innerHTML = "";
+
+        todos.forEach(todo => {
+            renderTodo(todo);
+        });
+
+    } catch (error) {
+        console.error("Fehler beim Laden:", error);
+    }
+}
+
+// ==========================
+// TODO HINZUFÜGEN
+// ==========================
+async function addTodo() {
+    const title = document.getElementById("todoTitle").value;
+    const subject = document.getElementById("todoSubject").value;
+    const dueDate = document.getElementById("todoDate").value;
+    const priority = document.getElementById("todoPriority").value;
+
+    if (!title || !dueDate) {
+        alert("Bitte Titel und Datum angeben!");
+        return;
+    }
+
+    const todoData = {
+        title: title,
+        subject: subject,
+        due_date: dueDate,
+        priority: priority
+    };
+
+    try {
+        await fetch(`${API_URL}/todos/${userId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(todoData)
+        });
+
+        document.getElementById("todoTitle").value = "";
+        loadTodos();
+
+    } catch (error) {
+        console.error("Fehler beim Speichern:", error);
+    }
+}
+
+// ==========================
+// TODO RENDERN
+// ==========================
+function renderTodo(todo) {
+    const li = document.createElement("li");
+
+    li.innerHTML = `
+        <strong>${todo.title}</strong> (${todo.subject})<br>
+        📅 ${todo.due_date} | ⚡ ${todo.priority}
+        <button onclick="deleteTodo('${todo.id}')">🗑</button>
+    `;
+
+    todoList.appendChild(li);
+}
+
+// ==========================
+// TODO LÖSCHEN
+// ==========================
+async function deleteTodo(todoId) {
+    try {
+        await fetch(`${API_URL}/todos/${userId}/${todoId}`, {
+            method: "DELETE"
+        });
+
+        loadTodos();
+
+    } catch (error) {
+        console.error("Fehler beim Löschen:", error);
+    }
+}
+
+
+        function addTodo() {
+            const input = document.getElementById('todoInput');
+            const priority = document.getElementById('todoPriority');
+            
+            if (input.value.trim()) {
+                todos.push({
+                    text: input.value.trim(),
+                    priority: priority.value,
+                    completed: false
+                });
+                input.value = '';
+                renderTodos();
+            }
+        }
+
+        renderTodos();
+
+        // Flashcard Functionality
+        let currentCard = 0;
+        const flashcards = [
+            { question: 'Was ist ein Automat?', answer: 'Ein abstraktes Modell eines Rechners mit endlich vielen Zuständen' },
+            { question: 'Was ist eine reguläre Sprache?', answer: 'Eine Sprache, die von einem endlichen Automaten erkannt werden kann' },
+            { question: 'Was ist der Unterschied zwischen DFA und NFA?', answer: 'DFA ist deterministisch, NFA nicht-deterministisch' },
+            { question: 'Was ist die Chomsky-Hierarchie?', answer: 'Eine Klassifizierung formaler Sprachen in vier Typen' },
+            { question: 'Was ist ein Pumping-Lemma?', answer: 'Ein Hilfsmittel zum Beweis, dass eine Sprache nicht regulär ist' }
+        ];
+
+        function flipCard(cardId) {
+            const card = document.getElementById(cardId);
+            if (card) {
+                card.classList.toggle('flipped');
+            }
+        }
+
+        function nextCard() {
+            currentCard = (currentCard + 1) % flashcards.length;
+            updateFlashcard();
+            updateCardCounter();
+        }
+
+        function previousCard() {
+            currentCard = (currentCard - 1 + flashcards.length) % flashcards.length;
+            updateFlashcard();
+            updateCardCounter();
+        }
+
+        function updateCardCounter() {
+            const counter = document.getElementById('cardCounter');
+            if (counter) {
+                counter.textContent = `Karte ${currentCard + 1} von ${flashcards.length}`;
+            }
+        }
+
+        function updateFlashcard() {
+            const card = flashcards[currentCard];
+            const flashcardElement = document.getElementById('flashcard');
+            const flashcardDetail = document.getElementById('flashcardDetail');
+            
+            // Remove flipped state
+            if (flashcardElement) flashcardElement.classList.remove('flipped');
+            if (flashcardDetail) flashcardDetail.classList.remove('flipped');
+            
+            // Update overview card
+            if (flashcardElement) {
+                const front = flashcardElement.querySelector('.flashcard-front');
+                const back = flashcardElement.querySelector('.flashcard-back');
+                front.innerHTML = `<p><strong>Frage:</strong> ${card.question}</p>`;
+                back.innerHTML = `<p>${card.answer}</p>`;
+            }
+            
+            // Update detail view card
+            if (flashcardDetail) {
+                const frontDetail = flashcardDetail.querySelector('.flashcard-front');
+                const backDetail = flashcardDetail.querySelector('.flashcard-back');
+                frontDetail.innerHTML = `<p><strong>Frage:</strong> ${card.question}</p>`;
+                backDetail.innerHTML = `<p>${card.answer}</p>`;
+            }
+        }
+
+        // Grades Functionality
+        function addGrade() {
+            const subjectInput = document.getElementById('gradeSubject');
+            const valueInput = document.getElementById('gradeValue');
+            const gradesList = document.getElementById('gradesList');
+            
+            if (subjectInput.value.trim() && valueInput.value) {
+                const value = parseInt(valueInput.value);
+                let colorClass = '';
+                
+                if (value >= 12) colorClass = '';
+                else if (value >= 9) colorClass = 'warning';
+                else colorClass = 'danger';
+                
+                const gradeItem = document.createElement('div');
+                gradeItem.className = 'grade-item';
+                gradeItem.innerHTML = `
+                    <span class="grade-subject">${subjectInput.value}</span>
+                    <span class="grade-value ${colorClass}">${value} P</span>
+                `;
+                
+                gradesList.appendChild(gradeItem);
+                
+                subjectInput.value = '';
+                valueInput.value = '';
+            }
+        }
+
+        // Files Functionality
+        const files = [
+            { name: 'Informatik_Klausur_Vorbereitung.pdf', icon: '📄', meta: 'Hochgeladen vor 2 Tagen • 2.3 MB' },
+            { name: 'Mathe_Formelsammlung.xlsx', icon: '📊', meta: 'Hochgeladen vor 5 Tagen • 1.1 MB' },
+            { name: 'Physik_Experiment_Video.mp4', icon: '🎥', meta: 'Hochgeladen vor 1 Woche • 45 MB' }
+        ];
+
+        function renderFiles() {
+            const filesList = document.getElementById('filesDetailList');
+            if (!filesList) return;
+            
+            filesList.innerHTML = files.map(file => `
+                <div class="file-item">
+                    <span class="file-icon">${file.icon}</span>
+                    <div class="file-info">
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">${file.meta}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function addFile() {
+            const nameInput = document.getElementById('fileName');
+            const typeSelect = document.getElementById('fileType');
+            
+            if (nameInput.value.trim()) {
+                files.push({
+                    name: nameInput.value.trim(),
+                    icon: typeSelect.value,
+                    meta: 'Gerade hochgeladen • 0 MB'
+                });
+                nameInput.value = '';
+                renderFiles();
+            }
+        }
+
+        renderFiles();
+    </script>
+</body>
+</html>
