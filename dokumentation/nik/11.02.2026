@@ -1,0 +1,4 @@
+Account löschen endüppoint ins backend hinzugefügt
+  https://chatgpt.com/share/698c7103-6abc-800a-a066-6179bdbee8e0
+User-Id wird nach anmeldung an das dashboard weitergegeben um den benutzer zuzuordnen. Dafür auch backend angepasst, damit user-id von backend zurückgegeben wird
+  https://chatgpt.com/share/698c71d9-6d10-800a-aa0a-e963dc161021
