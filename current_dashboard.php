@@ -7,7 +7,25 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $user_id = $_SESSION['user_id'];
+
 ?>
+
+<?php
+$backend_url = "http://127.0.0.1:8000/files/$user_id";
+
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $backend_url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+$response = curl_exec($ch);
+curl_close($ch);
+
+$files = json_decode($response, true);
+if (!$files) {
+    $files = [];
+}
+?>
+
 
 
 <!DOCTYPE html>
@@ -1022,17 +1040,42 @@ $user_id = $_SESSION['user_id'];
                         <div class="widget-header">
                             <div class="widget-title">Datei hochladen</div>
                         </div>
+                        <form action="upload.php" method="POST" enctype="multipart/form-data">
                         <div class="input-group">
-                            <input type="text" id="fileName" placeholder="Dateiname...">
-                            <select id="fileType">
-                                <option value="📄">Dokument</option>
-                                <option value="📊">Tabelle</option>
-                                <option value="🎥">Video</option>
-                                <option value="🖼️">Bild</option>
-                            </select>
-                            <button class="btn-primary" onclick="addFile()">Hinzufügen</button>
+                            <input type="text" name="subject" placeholder="Fach eingeben..." required>
+                                <input type="file" name="file" required>
+                            <button class="btn-primary" type="submit">Hochladen</button>
+                                </div>
+                            </form>
                         </div>
-                        <div class="files-list" id="filesDetailList" style="margin-top: 1.5rem;"></div>
+                        <div class="files-list" style="margin-top: 1.5rem;">
+<?php foreach ($files as $file): ?>
+    <div class="file-item">
+        <span class="file-icon">📄</span>
+        <div class="file-info">
+            <div class="file-name">
+                <?php echo htmlspecialchars($file['original_name']); ?>
+            </div>
+            <div class="file-meta">
+                <?php echo htmlspecialchars($file['subject']); ?>
+            </div>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <a class="btn-icon"
+               href="download.php?file_id=<?php echo $file['id']; ?>">
+               ⬇️
+            </a>
+
+            <a class="btn-icon"
+               href="delete.php?file_id=<?php echo $file['id']; ?>">
+               🗑️
+            </a>
+        </div>
+    </div>
+<?php endforeach; ?>
+</div>
+
                     </div>
                 </div>
 
@@ -1284,43 +1327,7 @@ themeToggle.addEventListener('click', () => {
         }
 
         // Files Functionality
-        const files = [
-            { name: 'Informatik_Klausur_Vorbereitung.pdf', icon: '📄', meta: 'Hochgeladen vor 2 Tagen • 2.3 MB' },
-            { name: 'Mathe_Formelsammlung.xlsx', icon: '📊', meta: 'Hochgeladen vor 5 Tagen • 1.1 MB' },
-            { name: 'Physik_Experiment_Video.mp4', icon: '🎥', meta: 'Hochgeladen vor 1 Woche • 45 MB' }
-        ];
-
-        function renderFiles() {
-            const filesList = document.getElementById('filesDetailList');
-            if (!filesList) return;
-            
-            filesList.innerHTML = files.map(file => `
-                <div class="file-item">
-                    <span class="file-icon">${file.icon}</span>
-                    <div class="file-info">
-                        <div class="file-name">${file.name}</div>
-                        <div class="file-meta">${file.meta}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function addFile() {
-            const nameInput = document.getElementById('fileName');
-            const typeSelect = document.getElementById('fileType');
-            
-            if (nameInput.value.trim()) {
-                files.push({
-                    name: nameInput.value.trim(),
-                    icon: typeSelect.value,
-                    meta: 'Gerade hochgeladen • 0 MB'
-                });
-                nameInput.value = '';
-                renderFiles();
-            }
-        }
-
-        renderFiles();
+        
     </script>
 </body>
 </html>
