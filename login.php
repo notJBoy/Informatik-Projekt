@@ -63,8 +63,19 @@ curl_close($ch);
 
 ?>
 <!DOCTYPE html>
-<html lang="de" data-theme="light">
+<html lang="de">
 <head>
+<script>
+(function () {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+        document.documentElement.setAttribute('data-theme', savedTheme);
+    }
+})();
+</script>
+
+
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LearnHub Login</title>
@@ -255,23 +266,22 @@ curl_close($ch);
 
     <script>
         (function () {
-            const root = document.documentElement;
-            const toggleBtn = document.getElementById('themeToggle');
-            const storedTheme = localStorage.getItem('theme');
+    const root = document.documentElement;
+    const toggleBtn = document.getElementById('themeToggle');
 
-            if (storedTheme === 'dark') {
-                root.setAttribute('data-theme', 'dark');
-                toggleBtn.textContent = 'Lightmode';
-            }
+    const currentTheme = root.getAttribute('data-theme') || 'light';
+    toggleBtn.textContent = currentTheme === 'dark' ? 'Lightmode' : 'Darkmode';
 
-            toggleBtn.addEventListener('click', function () {
-                const current = root.getAttribute('data-theme') || 'light';
-                const next = current === 'light' ? 'dark' : 'light';
-                root.setAttribute('data-theme', next);
-                localStorage.setItem('theme', next);
-                toggleBtn.textContent = next === 'dark' ? 'Lightmode' : 'Darkmode';
-            });
-        })();
+    toggleBtn.addEventListener('click', function () {
+        const current = root.getAttribute('data-theme') || 'light';
+        const next = current === 'light' ? 'dark' : 'light';
+
+        root.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+
+        toggleBtn.textContent = next === 'dark' ? 'Lightmode' : 'Darkmode';
+    });
+})();
     </script>
 
 </body>
