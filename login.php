@@ -1,7 +1,10 @@
 <?php
 // Einfache Session-Startung
 session_start();
-
+if (isset($_SESSION['user_id'])) {
+    header("Location: current_dashboard.php");
+    exit();
+}
 // Fehlernachricht (falls vorhanden)
 $error_message = '';
 
@@ -286,3 +289,4 @@ curl_close($ch);
 
 </body>
 </html>
+
