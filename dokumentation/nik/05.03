@@ -633,3 +633,348 @@ So bleibt die Vorschau im Übersicht-Tab sofort synchron wenn man im To-Do-Tab A
 | Admin Nachrichten | DOM-Klon aus `#adminMessagesList` | ✅ Live |
 | Karteikarten | Bereits zuvor live (shared `flashcards[]`) | ✅ unverändert |
 | Dateien-Button-Bug | `view-data` → `data-view` | ✅ behoben |
+
+
+---
+
+# Refactoring: Moduldateien in eigene Ordner ausgelagert
+
+Prompt an GitHub Copilot:
+lagere die modulÃ¶dateien wie zb register.php in seperate ordner um fÃ¼r jeden tab einen ordner
+
+**Datum:** 05.03.2026
+**Bearbeiter:** Nik
+**Betroffene Dateien:** `login.php`, `logout.php`, `register.php`, `todo_add.php`, `todo_delete.php`, `todo_load.php`, `todo_toggle.php`, `upload.php`, `download.php`, `delete.php`, `current_dashboard.php`, `tabs/files.php`, `index.php`
+
+---
+
+## Ausgangslage
+
+Alle Modul-PHP-Dateien (Auth, Todos, Dateiverwaltung) lagen flach im Wurzelverzeichnis neben `current_dashboard.php`. Das machte die Struktur unÃ¼bersichtlich.
+
+---
+
+## Ziel
+
+Modul-Dateien nach Funktionsbereich in eigene Unterordner verschieben, alle internen Verweise entsprechend anpassen.
+
+---
+
+## Neue Ordnerstruktur
+
+```
+auth/
+  login.php
+  logout.php
+  register.php
+todos/
+  todo_add.php
+  todo_delete.php
+  todo_load.php
+  todo_toggle.php
+files/
+  upload.php
+  download.php
+  delete.php
+tabs/          (bereits vorhanden)
+current_dashboard.php
+index.php
+```
+
+---
+
+## Vorgenommene Ã„nderungen
+
+### 1. Dateien verschoben
+
+| Datei | Alter Pfad | Neuer Pfad |
+|---|---|---|
+| `login.php` | `/login.php` | `auth/login.php` |
+| `logout.php` | `/logout.php` | `auth/logout.php` |
+| `register.php` | `/register.php` | `auth/register.php` |
+| `todo_add.php` | `/todo_add.php` | `todos/todo_add.php` |
+| `todo_delete.php` | `/todo_delete.php` | `todos/todo_delete.php` |
+| `todo_load.php` | `/todo_load.php` | `todos/todo_load.php` |
+| `todo_toggle.php` | `/todo_toggle.php` | `todos/todo_toggle.php` |
+| `upload.php` | `/upload.php` | `files/upload.php` |
+| `download.php` | `/download.php` | `files/download.php` |
+| `delete.php` | `/delete.php` | `files/delete.php` |
+
+### 2. Referenzen angepasst
+
+| Datei | Alt | Neu |
+|---|---|---|
+| `index.php` | `login.php` | `auth/login.php` |
+| `current_dashboard.php` | `login.php` | `auth/login.php` |
+| `current_dashboard.php` | `logout.php` | `auth/logout.php` |
+| `current_dashboard.php` | `todo_load.php` | `todos/todo_load.php` |
+| `current_dashboard.php` | `todo_add.php` | `todos/todo_add.php` |
+| `current_dashboard.php` | `todo_toggle.php` | `todos/todo_toggle.php` |
+| `current_dashboard.php` | `todo_delete.php` | `todos/todo_delete.php` |
+| `current_dashboard.php` | `download.php` (JS fetch) | `files/download.php` |
+| `tabs/files.php` | `upload.php` | `files/upload.php` |
+| `tabs/files.php` | `download.php` | `files/download.php` |
+| `tabs/files.php` | `delete.php` | `files/delete.php` |
+| `auth/login.php` | `current_dashboard.php` | `../current_dashboard.php` |
+| `files/download.php` | `login.php` | `../auth/login.php` |
+| `files/delete.php` | `login.php` | `../auth/login.php` |
+| `files/delete.php` | `current_dashboard.php` | `../current_dashboard.php` |
+
+---
+
+## Ergebnis
+
+Alle Modul-Dateien sind jetzt nach Funktionsbereich geordnet. Die Verweise in allen betroffenen Dateien wurden auf die neuen relativen Pfade aktualisiert. Funktionsweise bleibt vollstÃ¤ndig erhalten.
+
+
+---
+
+---
+
+# Karteikarten-Tab: Vollständige Implementierung mit Stapeln und Erkunden-Bereich
+
+**Prompt an GitHub Copilot:**
+Implementiere den Karteikarten-Tab. Achte darauf dass dieser vollständig funktionsfähig ist und mit dem backend verknüpft ist. Man soll verschiedene stapel erstellen können und adde auch einen explore tab in dem karteikartensystem wobei man die auf öffentlich gesetzten karteikartenstapel erkunden kann und auch verwenden. füge meinen prompt, deine ausgabe und alles was du geändert hast in die heutige dokumentation von nik ein
+
+**Datum:** 05.03.2026
+**Bearbeiter:** Nik / GitHub Copilot
+**Betroffene Dateien:** `backend.py`, `tabs/flashcards.php`, neu: `flashcards/` (9 PHP-Proxy-Dateien)
+
+---
+
+## Ausgangslage
+
+`tabs/flashcards.php` enthielt lediglich einen statischen Platzhalter mit hartcodierten Fragen/Antworten (Automaten-Theorie) und fest einprogrammierten Navigationsbuttons. Es gab keine Verbindung zum Backend, keine Stapel-Verwaltung, keine Datenbankpersistenz.
+
+Das Backend (`backend.py`) hatte bereits eine `flashcards`-Tabelle und minimale Routen (`POST /flashcards/{user_id}`, `GET /flashcards/{user_id}`), aber kein Stapel-Konzept.
+
+---
+
+## Ziel
+
+- Vollständige Karteikarten-Verwaltung mit Stapeln (Decks)
+- Backend-Anbindung via PHP-Proxy-Dateien (gleiches Muster wie `todos/`)
+- Lernmodus mit animierten Karten-Flip
+- Explore-Bereich für öffentliche Stapel anderer Nutzer
+
+---
+
+## Vorgenommene Änderungen
+
+### 1. `backend.py` – Datenbank & neue API-Routen
+
+#### 1a. Neue Tabelle `flashcard_decks`
+
+```sql
+CREATE TABLE IF NOT EXISTS flashcard_decks (
+    id TEXT PRIMARY KEY,
+    user_id TEXT,
+    name TEXT,
+    subject TEXT,
+    description TEXT,
+    public INTEGER,
+    created_at TEXT
+)
+```
+
+#### 1b. Neue Spalte `deck_id` in `flashcards`
+
+Da SQLite kein `ADD COLUMN IF NOT EXISTS` kennt, wird die Spalte mit try/except ergänzt:
+
+```python
+try:
+    cursor.execute("ALTER TABLE flashcards ADD COLUMN deck_id TEXT")
+except Exception:
+    pass  # Column already exists
+```
+
+#### 1c. Neue Pydantic-Modelle
+
+| Modell | Felder |
+|---|---|
+| `FlashcardDeckCreate` | `name`, `subject` (optional), `description` (optional), `public: bool = False` |
+| `FlashcardDeckUpdate` | Alle Felder optional (`name`, `subject`, `description`, `public`) |
+| `FlashcardCardCreate` | `front: str`, `back: str` |
+
+#### 1d. Neue API-Endpunkte
+
+| Methode | Route | Beschreibung |
+|---|---|---|
+| `GET` | `/flashcard-decks/explore` | Alle öffentlichen Stapel (mit Autorenname + Kartenanzahl via Subquery) |
+| `GET` | `/flashcard-decks/{user_id}` | Eigene Stapel des Nutzers (mit Kartenanzahl) |
+| `POST` | `/flashcard-decks/{user_id}` | Neuen Stapel erstellen |
+| `PUT` | `/flashcard-decks/{user_id}/{deck_id}` | Stapel umbenennen / Sichtbarkeit ändern |
+| `DELETE` | `/flashcard-decks/{user_id}/{deck_id}` | Stapel + alle enthaltenen Karten löschen |
+| `POST` | `/flashcard-decks/{user_id}/copy/{source_deck_id}` | Öffentlichen Stapel in eigene Sammlung kopieren |
+| `GET` | `/flashcard-cards/deck/{deck_id}` | Alle Karten eines Stapels laden |
+| `POST` | `/flashcard-cards/{user_id}/deck/{deck_id}` | Neue Karte zu einem Stapel hinzufügen |
+| `DELETE` | `/flashcard-cards/{user_id}/{card_id}` | Einzelne Karte löschen |
+
+> **Wichtig:** `/flashcard-decks/explore` ist **vor** `/flashcard-decks/{user_id}` registriert, damit FastAPI „explore" nicht als `user_id` matcht.
+
+---
+
+### 2. Neues Verzeichnis `flashcards/` – PHP-Proxy-Dateien
+
+Alle Browser-Fetch-Aufrufe gehen an PHP-Dateien, die (per cURL) als Proxy zum FastAPI-Backend fungieren. Die `user_id` kommt dabei stets aus `$_SESSION['user_id']` (sicher serverseitig).
+
+| Datei | Methode | Backend-Route |
+|---|---|---|
+| `flashcards/decks_load.php` | GET | `GET /flashcard-decks/{user_id}` |
+| `flashcards/deck_create.php` | POST→POST | `POST /flashcard-decks/{user_id}` |
+| `flashcards/deck_delete.php` | POST→DELETE | `DELETE /flashcard-decks/{user_id}/{deck_id}` |
+| `flashcards/deck_update.php` | POST→PUT | `PUT /flashcard-decks/{user_id}/{deck_id}` |
+| `flashcards/cards_load.php` | GET | `GET /flashcard-cards/deck/{deck_id}` |
+| `flashcards/card_add.php` | POST→POST | `POST /flashcard-cards/{user_id}/deck/{deck_id}` |
+| `flashcards/card_delete.php` | POST→DELETE | `DELETE /flashcard-cards/{user_id}/{card_id}` |
+| `flashcards/explore_load.php` | GET | `GET /flashcard-decks/explore` |
+| `flashcards/deck_copy.php` | POST→POST | `POST /flashcard-decks/{user_id}/copy/{deck_id}` |
+
+---
+
+### 3. `tabs/flashcards.php` – Komplett neu geschrieben
+
+Der statische Platzhalter wurde durch eine vollständige Single-Page-Applikation (innerhalb des Tabs) ersetzt.
+
+#### 3a. Sub-Navigation
+
+Zwei Sub-Tabs oben im Karteikarten-Tab:
+- **📚 Meine Stapel** – eigene Stapel verwalten
+- **🌐 Erkunden** – öffentliche Stapel anderer Nutzer
+
+#### 3b. Sub-Views (insgesamt 4)
+
+| View-ID | Beschreibung |
+|---|---|
+| `#fc-view-my-decks` | Stapel-Übersicht mit Raster-Layout |
+| `#fc-view-deck-detail` | Detailansicht eines Stapels (Karten-Liste + Formular) |
+| `#fc-view-study` | Lernmodus mit Flip-Animation |
+| `#fc-view-explore` | Explore-Bereich mit Suche und Übernehmen-Funktion |
+
+#### 3c. Meine Stapel (`#fc-view-my-decks`)
+
+- **Stapelkarten** im Grid-Layout (mind. 260px pro Spalte)
+- Jede Karte zeigt: Name, Fach, Kartenanzahl, Sichtbarkeit-Badge (🌐/🔒)
+- Hover: Löschen-Button erscheint
+- Klick auf Karte → öffnet Detailansicht
+- **„Neuer Stapel"-Formular** (aufklappbar): Name*, Fach, Beschreibung, Öffentlich-Checkbox
+
+#### 3d. Deck-Detailansicht (`#fc-view-deck-detail`)
+
+- Titel, Fach-Badge, Sichtbarkeits-Badge
+- **Sichtbarkeit ändern**-Button (toggle öffentlich/privat via `deck_update.php`)
+- **Stapel löschen**-Button (mit Bestätigungs-Dialog)
+- **Karte hinzufügen**-Formular: Vorderseite + Rückseite (Textarea, nebeneinander) + Button
+- **Karten-Liste**: jede Karte zeigt Vorderseite | Rückseite | Löschen-Button
+- **🎓 Lernen**-Button → startet Lernmodus (disabled wenn keine Karten vorhanden)
+
+#### 3e. Lernmodus (`#fc-view-study`)
+
+- Fortschrittsbalken (animiert, CSS-Transition)
+- Fortschrittstext „X / Y"
+- **Karteikarte** mit 3D-Flip-Animation (CSS `perspective`, `rotateY(180deg)`, `backface-visibility: hidden`)
+  - Vorderseite: weiß, Hint-Text „Tippe zum Umdrehen"
+  - Rückseite: Gradient (Primary-Farbe), weiß
+  - Klick auf Karte → dreht um
+- Navigation: ← Zurück | 🔄 Umdrehen | Weiter →
+- Nach letzter Karte: Finish-Screen mit 🎉, „Nochmal"- und „Zum Stapel"-Buttons
+
+#### 3f. Erkunden (`#fc-view-explore`)
+
+- Suchfeld (Live-Filter nach Name, Fach, Beschreibung, Nutzername)
+- Aktualisieren-Button
+- **Explorekarten** im Grid-Layout: Name, Autor, Fach, Beschreibung, Kartenanzahl
+- **„Übernehmen"**-Button: kopiert den öffentlichen Stapel (inkl. Karten) in die eigene Sammlung via `deck_copy.php`
+
+#### 3g. JavaScript-Logik
+
+Alle Funktionen sind inline in `tabs/flashcards.php` definiert (kein separates JS-File, konsistent mit restlichem Projekt).
+
+| Funktion | Beschreibung |
+|---|---|
+| `fcShowTab(tab, btn)` | Sub-Tab wechseln |
+| `fcShowSubview(name)` | Sub-View ein-/ausblenden |
+| `fcLoadDecks()` | Stapel von `decks_load.php` laden + rendern |
+| `fcRenderDecks()` | Stapel-Grid in DOM schreiben |
+| `fcShowDecksView()` | Stapel-View zeigen + Daten laden |
+| `fcToggleNewDeckForm()` | Neuer-Stapel-Formular auf-/zuklappen |
+| `fcCreateDeck()` | Neuen Stapel über `deck_create.php` anlegen |
+| `fcOpenDeck(deckId)` | Stapel-Detailansicht öffnen |
+| `fcUpdateVisibilityBadge(isPublic)` | Badge Öffentlich/Privat aktualisieren |
+| `fcLoadCards()` | Karten von `cards_load.php` laden |
+| `fcRenderCards()` | Karten-Liste in DOM schreiben |
+| `fcAddCard()` | Neue Karte via `card_add.php` hinzufügen |
+| `fcDeleteCard(cardId)` | Karte via `card_delete.php` löschen |
+| `fcDeleteCurrentDeck()` | Aktuellen Stapel löschen + zurücknavigieren |
+| `fcDeleteDeckById(deckId)` | Stapel via `deck_delete.php` löschen |
+| `fcToggleDeckPublic()` | Sichtbarkeit via `deck_update.php` toggling |
+| `fcStartStudy()` | Lernmodus starten |
+| `fcUpdateStudyCard()` | Aktuelle Karte anzeigen (Index, Fortschritt, Text) |
+| `fcStudyFlip()` | Karte umdrehen (CSS-Klasse togglen) |
+| `fcStudyNext()` / `fcStudyPrev()` | Nächste/vorherige Karte |
+| `fcStudyRestart()` | Lernmodus von vorne beginnen |
+| `fcStopStudy()` | Zurück zur Detailansicht |
+| `fcLoadExplore()` | Öffentliche Stapel von `explore_load.php` laden |
+| `fcRenderExplore(decks)` | Explore-Grid in DOM schreiben |
+| `fcFilterExplore()` | Live-Suche (clientseitig) |
+| `fcCopyDeck(deckId, deckName)` | Stapel via `deck_copy.php` übernehmen |
+| `fcEsc(str)` | HTML-Escaping (XSS-Schutz) |
+
+**Navigation-Hook:** Beim Klick auf das Karteikarten-Nav-Item wird automatisch `fcLoadDecks()` aufgerufen, damit die Liste stets aktuell ist.
+
+---
+
+## CSS-Erweiterungen (in `tabs/flashcards.php`)
+
+Alle neuen CSS-Klassen sind in einem `<style>`-Block am Anfang von `tabs/flashcards.php` definiert und benutzen die vorhandenen CSS-Variablen (`--color-primary`, `--color-bg-surface`, etc.) für Dark-Mode-Kompatibilität.
+
+| Klasse | Zweck |
+|---|---|
+| `.fc-subnav` / `.fc-subnav-btn.active` | Sub-Tab-Navigation mit Unterstrich-Indikator |
+| `.fc-decks-grid` | Responsive CSS-Grid für Stapelkarten |
+| `.fc-deck-card` | Einzelne Stapelkarte (Hover-Effekt + Lift) |
+| `.fc-badge` / `.fc-badge.private` | Sichtbarkeits-Badge grün/grau |
+| `.fc-deck-actions` | Löschen-Button (erscheint bei Hover) |
+| `.fc-new-deck-form.open` | Aufklappbares Formular (display flex/none) |
+| `.fc-cards-list` / `.fc-card-item` | Karten-Liste mit zweispaltiger Anzeige |
+| `.fc-study-card-wrap` / `.fc-study-card-inner` | 3D-Flip-Container |
+| `.fc-study-front` / `.fc-study-back` | Vorder-/Rückseite der Lernkarte |
+| `.fc-study-progress-bar` / `.fc-study-progress-fill` | Animierter Fortschrittsbalken |
+| `.fc-explore-grid` / `.fc-explore-card` | Explore-Kartengitter |
+
+---
+
+## Zusammenfassung: Neue Dateien
+
+| Datei | Typ | Inhalt |
+|---|---|---|
+| `flashcards/decks_load.php` | PHP-Proxy | Eigene Stapel laden |
+| `flashcards/deck_create.php` | PHP-Proxy | Stapel erstellen |
+| `flashcards/deck_delete.php` | PHP-Proxy | Stapel löschen |
+| `flashcards/deck_update.php` | PHP-Proxy | Stapel bearbeiten (Name, Sichtbarkeit) |
+| `flashcards/cards_load.php` | PHP-Proxy | Karten eines Stapels laden |
+| `flashcards/card_add.php` | PHP-Proxy | Karte zu Stapel hinzufügen |
+| `flashcards/card_delete.php` | PHP-Proxy | Karte löschen |
+| `flashcards/explore_load.php` | PHP-Proxy | Öffentliche Stapel laden |
+| `flashcards/deck_copy.php` | PHP-Proxy | Öffentlichen Stapel übernehmen |
+
+---
+
+## Ergebnis
+
+| Feature | Status |
+|---|---|
+| Stapel erstellen (Name, Fach, Beschreibung, Öffentlich) | ✅ |
+| Stapel löschen (inkl. aller Karten) | ✅ |
+| Stapel öffentlich/privat schalten | ✅ |
+| Karten zu Stapel hinzufügen (Vorder-/Rückseite) | ✅ |
+| Karten löschen | ✅ |
+| Lernmodus mit 3D-Flip-Animation | ✅ |
+| Fortschrittsbalken im Lernmodus | ✅ |
+| Finish-Screen nach letzter Karte | ✅ |
+| Explore-Tab mit öffentlichen Stapeln | ✅ |
+| Live-Suche im Explore-Tab | ✅ |
+| Öffentlichen Stapel als Kopie übernehmen | ✅ |
+| Dark-Mode-kompatibel (CSS-Variablen) | ✅ |
+| XSS-Schutz durch `fcEsc()` | ✅ |
+| Daten persistent in SQLite via Backend | ✅ |

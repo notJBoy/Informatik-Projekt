@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: auth/login.php");
     exit();
 }
 
@@ -1331,7 +1331,7 @@ themeToggle.addEventListener('click', () => {
 
         async function loadTodos() {
             try {
-                const res = await fetch('todo_load.php');
+                const res = await fetch('todos/todo_load.php');
                 if (!res.ok) { todosData = []; return; }
                 todosData = await res.json();
                 renderTodosUI();
@@ -1408,7 +1408,7 @@ themeToggle.addEventListener('click', () => {
             const priorityEl = document.getElementById('todoPriority');
             if (!titleEl || !titleEl.value.trim()) return;
             try {
-                const res = await fetch('todo_add.php', {
+                const res = await fetch('todos/todo_add.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1429,7 +1429,7 @@ themeToggle.addEventListener('click', () => {
 
         async function toggleTodoById(todoId) {
             try {
-                const res = await fetch(`todo_toggle.php?todo_id=${encodeURIComponent(todoId)}`, {
+                const res = await fetch(`todos/todo_toggle.php?todo_id=${encodeURIComponent(todoId)}`, {
                     method: 'POST'
                 });
                 if (res.ok) await loadTodos();
@@ -1438,7 +1438,7 @@ themeToggle.addEventListener('click', () => {
 
         async function deleteTodoById(todoId) {
             try {
-                const res = await fetch(`todo_delete.php?todo_id=${encodeURIComponent(todoId)}`, {
+                const res = await fetch(`todos/todo_delete.php?todo_id=${encodeURIComponent(todoId)}`, {
                     method: 'POST'
                 });
                 if (res.ok) {
@@ -1957,7 +1957,7 @@ themeToggle.addEventListener('click', () => {
                             <div class="file-name">${escapeHtml(f.original_name)}</div>
                             <div class="file-meta">${escapeHtml(f.subject)}</div>
                         </div>
-                        <a class="btn-icon" href="download.php?file_id=${f.id}" title="Herunterladen">⬇️</a>
+                        <a class="btn-icon" href="files/download.php?file_id=${f.id}" title="Herunterladen">⬇️</a>
                     </div>`;
                 }).join('');
             } catch {
@@ -2100,7 +2100,7 @@ themeToggle.addEventListener('click', () => {
                 const data = await res.json();
                 if (res.ok) {
                     alert('Account gelöscht. Du wirst ausgeloggt.');
-                    window.location.href = 'logout.php';
+                    window.location.href = 'auth/logout.php';
                 } else {
                     setMsg('msgDelete', '❌ ' + (data.detail || 'Fehler'), 'error');
                 }

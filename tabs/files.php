@@ -24,7 +24,7 @@ if (!$files) {
                         <div class="widget-header">
                             <div class="widget-title">Datei hochladen</div>
                         </div>
-                        <form action="upload.php" method="POST" enctype="multipart/form-data">
+                        <form action="files/upload.php" method="POST" enctype="multipart/form-data">
                         <div class="input-group">
                             <input type="text" name="subject" placeholder="Fach eingeben..." required>
                                 <input type="file" name="file" required>
@@ -47,12 +47,12 @@ if (!$files) {
 
         <div style="display:flex; gap:10px;">
             <a class="btn-icon"
-               href="download.php?file_id=<?php echo $file['id']; ?>">
+               href="files/download.php?file_id=<?php echo $file['id']; ?>">
                ⬇️
             </a>
 
             <a class="btn-icon"
-               href="delete.php?file_id=<?php echo $file['id']; ?>">
+               href="files/delete.php?file_id=<?php echo $file['id']; ?>">
                🗑️
             </a>
         </div>

@@ -2,7 +2,7 @@
 session_start();
 
 if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
+    header("Location: ../auth/login.php");
     exit();
 }
 
@@ -38,6 +38,6 @@ DELETE gibt oft 204 zurück → response leer
 Das ist trotzdem Erfolg!
 */
 
-header("Location: current_dashboard.php");
+header("Location: ../current_dashboard.php");
 
 exit();

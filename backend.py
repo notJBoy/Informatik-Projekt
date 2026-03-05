@@ -108,6 +108,19 @@ def init_db():
     )
     """)
 
+    # FLASHCARD DECKS
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS flashcard_decks (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        name TEXT,
+        subject TEXT,
+        description TEXT,
+        public INTEGER,
+        created_at TEXT
+    )
+    """)
+
     # FLASHCARDS
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS flashcards (
@@ -119,6 +132,12 @@ def init_db():
         public INTEGER
     )
     """)
+
+    # Add deck_id column if it doesn't exist yet
+    try:
+        cursor.execute("ALTER TABLE flashcards ADD COLUMN deck_id TEXT")
+    except Exception:
+        pass  # Column already exists
 
     db.commit()
     db.close()
@@ -187,7 +206,27 @@ class FlashcardCreate(BaseModel):
     front: str
     back: str
     public: bool = False
-    
+
+
+class FlashcardDeckCreate(BaseModel):
+    name: str
+    subject: Optional[str] = ""
+    description: Optional[str] = ""
+    public: bool = False
+
+
+class FlashcardDeckUpdate(BaseModel):
+    name: Optional[str] = None
+    subject: Optional[str] = None
+    description: Optional[str] = None
+    public: Optional[bool] = None
+
+
+class FlashcardCardCreate(BaseModel):
+    front: str
+    back: str
+
+
 class TimetableCreate(BaseModel):
     day: str       # monday, tuesday, ...
     time: str      # "08:00 - 09:30"
@@ -717,7 +756,173 @@ def delete_grade(user_id: str, grade_id: str):
 
 
 # =========================================
-# FLASHCARDS ROUTES
+# FLASHCARD DECK ROUTES
+# =========================================
+
+@app.get("/flashcard-decks/explore")
+def explore_public_decks():
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+    SELECT d.id, d.user_id, d.name, d.subject, d.description, d.created_at,
+           u.username,
+           (SELECT COUNT(*) FROM flashcards f WHERE f.deck_id = d.id) AS card_count
+    FROM flashcard_decks d
+    JOIN users u ON d.user_id = u.id
+    WHERE d.public = 1
+    ORDER BY d.created_at DESC
+    """)
+    rows = cursor.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+@app.get("/flashcard-decks/{user_id}")
+def get_user_decks(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+    SELECT d.id, d.name, d.subject, d.description, d.public, d.created_at,
+           (SELECT COUNT(*) FROM flashcards f WHERE f.deck_id = d.id) AS card_count
+    FROM flashcard_decks d
+    WHERE d.user_id = ?
+    ORDER BY d.created_at DESC
+    """, (user_id,))
+    rows = cursor.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+@app.post("/flashcard-decks/{user_id}")
+def create_deck(user_id: str, deck: FlashcardDeckCreate):
+    db = get_db()
+    cursor = db.cursor()
+    deck_id = generate_id()
+    cursor.execute("""
+    INSERT INTO flashcard_decks VALUES (?, ?, ?, ?, ?, ?, ?)
+    """, (
+        deck_id,
+        user_id,
+        deck.name,
+        deck.subject,
+        deck.description,
+        int(deck.public),
+        datetime.utcnow().isoformat()
+    ))
+    db.commit()
+    db.close()
+    return {"message": "Stapel erstellt", "id": deck_id}
+
+
+@app.put("/flashcard-decks/{user_id}/{deck_id}")
+def update_deck(user_id: str, deck_id: str, deck: FlashcardDeckUpdate):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM flashcard_decks WHERE id=? AND user_id=?", (deck_id, user_id))
+    existing = cursor.fetchone()
+    if not existing:
+        raise HTTPException(status_code=404, detail="Stapel nicht gefunden")
+    new_name = deck.name if deck.name is not None else existing["name"]
+    new_subject = deck.subject if deck.subject is not None else existing["subject"]
+    new_desc = deck.description if deck.description is not None else existing["description"]
+    new_public = int(deck.public) if deck.public is not None else existing["public"]
+    cursor.execute("""
+    UPDATE flashcard_decks SET name=?, subject=?, description=?, public=?
+    WHERE id=? AND user_id=?
+    """, (new_name, new_subject, new_desc, new_public, deck_id, user_id))
+    db.commit()
+    db.close()
+    return {"message": "Stapel aktualisiert"}
+
+
+@app.delete("/flashcard-decks/{user_id}/{deck_id}")
+def delete_deck(user_id: str, deck_id: str):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM flashcards WHERE deck_id=? AND user_id=?", (deck_id, user_id))
+    cursor.execute("DELETE FROM flashcard_decks WHERE id=? AND user_id=?", (deck_id, user_id))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Stapel nicht gefunden")
+    db.commit()
+    db.close()
+    return {"message": "Stapel gelöscht"}
+
+
+@app.post("/flashcard-decks/{user_id}/copy/{source_deck_id}")
+def copy_deck(user_id: str, source_deck_id: str):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM flashcard_decks WHERE id=? AND public=1", (source_deck_id,))
+    source = cursor.fetchone()
+    if not source:
+        raise HTTPException(status_code=404, detail="Stapel nicht gefunden oder nicht öffentlich")
+    new_deck_id = generate_id()
+    cursor.execute("""
+    INSERT INTO flashcard_decks VALUES (?, ?, ?, ?, ?, 0, ?)
+    """, (
+        new_deck_id,
+        user_id,
+        source["name"] + " (Kopie)",
+        source["subject"],
+        source["description"],
+        datetime.utcnow().isoformat()
+    ))
+    cursor.execute("SELECT * FROM flashcards WHERE deck_id=?", (source_deck_id,))
+    cards = cursor.fetchall()
+    for card in cards:
+        cursor.execute("""
+        INSERT INTO flashcards VALUES (?, ?, ?, ?, ?, 0, ?)
+        """, (generate_id(), user_id, card["subject"], card["front"], card["back"], new_deck_id))
+    db.commit()
+    db.close()
+    return {"message": "Stapel übernommen", "id": new_deck_id}
+
+
+# =========================================
+# FLASHCARD CARD ROUTES
+# =========================================
+
+@app.get("/flashcard-cards/deck/{deck_id}")
+def get_deck_cards(deck_id: str):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("""
+    SELECT id, front, back FROM flashcards WHERE deck_id=?
+    """, (deck_id,))
+    rows = cursor.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
+
+
+@app.post("/flashcard-cards/{user_id}/deck/{deck_id}")
+def add_card_to_deck(user_id: str, deck_id: str, card: FlashcardCardCreate):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT id FROM flashcard_decks WHERE id=? AND user_id=?", (deck_id, user_id))
+    if not cursor.fetchone():
+        raise HTTPException(status_code=404, detail="Stapel nicht gefunden")
+    cursor.execute("""
+    INSERT INTO flashcards VALUES (?, ?, ?, ?, ?, 0, ?)
+    """, (generate_id(), user_id, "", card.front, card.back, deck_id))
+    db.commit()
+    db.close()
+    return {"message": "Karte hinzugefügt"}
+
+
+@app.delete("/flashcard-cards/{user_id}/{card_id}")
+def delete_card(user_id: str, card_id: str):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM flashcards WHERE id=? AND user_id=?", (card_id, user_id))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Karte nicht gefunden")
+    db.commit()
+    db.close()
+    return {"message": "Karte gelöscht"}
+
+
+# =========================================
+# FLASHCARDS ROUTES (legacy)
 # =========================================
 
 @app.post("/flashcards/{user_id}")
@@ -726,7 +931,7 @@ def create_flashcard(user_id: str, card: FlashcardCreate):
     cursor = db.cursor()
 
     cursor.execute("""
-    INSERT INTO flashcards VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO flashcards VALUES (?, ?, ?, ?, ?, ?, NULL)
     """, (
         generate_id(),
         user_id,
@@ -737,6 +942,7 @@ def create_flashcard(user_id: str, card: FlashcardCreate):
     ))
 
     db.commit()
+    db.close()
     return {"message": "Karteikarte erstellt"}
 
 
@@ -748,7 +954,9 @@ def get_flashcards(user_id: str):
     cursor.execute("""
     SELECT * FROM flashcards WHERE user_id=? OR public=1
     """, (user_id,))
-    return cursor.fetchall()
+    rows = cursor.fetchall()
+    db.close()
+    return [dict(r) for r in rows]
 
 
 # =========================================
