@@ -48,6 +48,20 @@
                             </div>
                         </div>
 
+                        <!-- Hausaufgaben Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">📚</span>
+                                    Hausaufgaben
+                                </div>
+                                <button class="widget-action" data-view="homework">→</button>
+                            </div>
+                            <div class="todo-list" id="overviewHomeworks">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                            </div>
+                        </div>
+
                         <!-- Klassenarbeiten Widget -->
                         <div class="widget">
                             <div class="widget-header">
@@ -58,6 +72,20 @@
                                 <button class="widget-action" data-view="exams">→</button>
                             </div>
                             <div class="grades-list" id="overviewExams">
+                                <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
+                            </div>
+                        </div>
+
+                        <!-- Kalender Widget -->
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">
+                                    <span class="widget-icon">📆</span>
+                                    Kommende Termine
+                                </div>
+                                <button class="widget-action" data-view="calendar">→</button>
+                            </div>
+                            <div class="grades-list" id="overviewCalendar">
                                 <p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>
                             </div>
                         </div>

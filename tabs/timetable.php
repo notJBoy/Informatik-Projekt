@@ -34,11 +34,11 @@
                         </div>
                     </div>
 
-                    <!-- Hausaufgaben Widget -->
+                    <!-- Hausaufgaben Zusammenfassung -->
                     <div class="widget" style="margin-top:1.5rem;">
                         <div class="widget-header">
                             <div class="widget-title">📚 Hausaufgaben</div>
                         </div>
-                        <div id="homeworkGrid"></div>
+                        <div id="homeworkGridTimetable"></div>
                     </div>
                 </div>

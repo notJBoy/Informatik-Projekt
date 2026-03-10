@@ -887,6 +887,18 @@ $user_id = $_SESSION['user_id'];
             border-radius: 4px;
             line-height: 1.3;
         }
+        .tt-subject-cell.has-homework {
+            background-color: rgba(25, 135, 84, 0.1); /* success tint */
+            border-color: rgba(25, 135, 84, 0.3);
+        }
+        .tt-homework-badge {
+            font-size: 0.62rem;
+            background-color: var(--color-success);
+            color: white;
+            padding: 2px 5px;
+            border-radius: 4px;
+            line-height: 1.3;
+        }
 
         .tt-subject-name {
             font-weight: 600;
@@ -1096,6 +1108,48 @@ $user_id = $_SESSION['user_id'];
         /* Vergangene Klausur */
         .exam-past { opacity: 0.55; }
 
+        /* Kalender Styling */
+        #calendarControls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        #calendarGrid th, #calendarGrid td {
+            border: 1px solid var(--color-border);
+            width: 14.28%;
+            height: 80px;
+            vertical-align: top;
+            padding: 0.25rem;
+            position: relative;
+        }
+        #calendarGrid td {
+            cursor: pointer;
+        }
+        #calendarGrid td:hover {
+            background-color: var(--color-bg-hover);
+        }
+        .cal-day-number {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+        .event-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--color-primary);
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+        }
+        #calendarEventList .calendar-event-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--color-border-light);
+        }
+        #calendarEventList .calendar-event-item.exam { background-color: var(--color-info)33; }
+        #calendarEventList .calendar-event-item.todo { background-color: var(--color-success)33; }
+        #calendarEventList .calendar-event-item.extra { background-color: var(--color-primary)33; }
+
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
             width: 8px;
@@ -1153,6 +1207,14 @@ $user_id = $_SESSION['user_id'];
                         <span class="nav-icon">📝</span>
                         <span>Klassenarbeiten</span>
                     </a>
+                    <a class="nav-item" data-view="homework">
+                        <span class="nav-icon">📚</span>
+                        <span>Hausaufgaben</span>
+                    </a>
+                    <a class="nav-item" data-view="calendar">
+                        <span class="nav-icon">📆</span>
+                        <span>Kalender</span>
+                    </a>
                     <a class="nav-item" data-view="flashcards">
                         <span class="nav-icon">🎴</span>
                         <span>Karteikarten</span>
@@ -1192,6 +1254,8 @@ $user_id = $_SESSION['user_id'];
                 <?php include __DIR__ . '/tabs/grades.php'; ?>
                 <?php include __DIR__ . '/tabs/todos.php'; ?>
                 <?php include __DIR__ . '/tabs/exams.php'; ?>
+                <?php include __DIR__ . '/tabs/homework.php'; ?>
+                <?php include __DIR__ . '/tabs/calendar.php'; ?>
                 <?php include __DIR__ . '/tabs/flashcards.php'; ?>
                 <?php include __DIR__ . '/tabs/files.php'; ?>
                 <?php include __DIR__ . '/tabs/admin-messages.php'; ?>
@@ -1310,6 +1374,13 @@ themeToggle.addEventListener('click', () => {
 
                 if (viewId === 'overview') {
                     renderOverview();
+                } else if (viewId === 'calendar') {
+                    // ensure calendar is up to date whenever user opens tab
+                    renderCalendar();
+                } else if (viewId === 'timetable') {
+                    // refresh timetable grid and homework preview when visiting timetable
+                    renderTimetableView();
+                    renderHomework(false, 'homeworkGridTimetable');
                 }
             });
         });
@@ -1336,10 +1407,16 @@ themeToggle.addEventListener('click', () => {
                 todosData = await res.json();
                 renderTodosUI();
                 renderOverviewTodos();
+                renderOverviewHomeworks();
+                renderCalendar();
+                renderOverviewCalendar();
             } catch {
                 todosData = [];
                 renderTodosUI();
                 renderOverviewTodos();
+                renderOverviewHomeworks();
+                renderCalendar();
+                renderOverviewCalendar();
             }
         }
 
@@ -1445,6 +1522,8 @@ themeToggle.addEventListener('click', () => {
                     todosData = (todosData || []).filter(t => t.id !== todoId);
                     renderTodosUI();
                     renderOverviewTodos();
+                    renderCalendar();
+                    renderOverviewCalendar();
                 }
             } catch { /* Server nicht erreichbar */ }
         }
@@ -1542,6 +1621,49 @@ themeToggle.addEventListener('click', () => {
         let timetableTimes = JSON.parse(localStorage.getItem('timetable_times')) || { ...DEFAULT_TIMES };
         let homework       = JSON.parse(localStorage.getItem('homework_data'))   || {};
         let exams          = JSON.parse(localStorage.getItem('exams_data'))      || [];
+        // zusätzliche Kalendereinträge, unabhängig von Hausaufgaben/Klassenarbeiten
+        let calendarExtras = JSON.parse(localStorage.getItem('calendar_extras')) || [];
+
+        function saveCalendarExtras() {
+            localStorage.setItem('calendar_extras', JSON.stringify(calendarExtras));
+        }
+
+        // Hilfsfunktion: liefert alle kalenderbezogenen Objekte (extras, exams, todos)
+        function getAllCalendarItems() {
+            let items = [];
+            // extras
+            calendarExtras.forEach(ev => {
+                items.push({
+                    date: ev.date,
+                    title: ev.title,
+                    description: ev.description || '',
+                    type: 'extra'
+                });
+            });
+            // exams
+            exams.forEach(ev => {
+                items.push({
+                    date: ev.date,
+                    title: ev.subject,
+                    description: ev.topic || '',
+                    type: 'exam'
+                });
+            });
+            // todos (nutzt due_date)
+            if (todosData) {
+                todosData.forEach(td => {
+                    if (td.due_date) {
+                        items.push({
+                            date: td.due_date,
+                            title: td.title,
+                            description: td.subject ? td.subject : '',
+                            type: 'todo'
+                        });
+                    }
+                });
+            }
+            return items;
+        }
 
         function getCurrentDayKey() {
             const idx = new Date().getDay(); // 0=Sun
@@ -1585,12 +1707,24 @@ themeToggle.addEventListener('click', () => {
             return highlights;
         }
 
+        function getHomeworkHighlights() {
+            // returns an object { dayKey: ["homework1","homework2"], ... }
+            const highlights = {};
+            TT_DAYS.forEach(day => {
+                const list = homework[day] || [];
+                if (list.length) highlights[day] = list.slice();
+            });
+            return highlights;
+        }
+
+
         function renderTimetableView() {
             const grid = document.getElementById('timetableGrid');
             if (!grid) return;
             const maxPeriod     = getMaxPeriod();
             const todayKey      = getCurrentDayKey();
             const examHighlights = getExamHighlights();
+            const homeworkHighlights = getHomeworkHighlights();
 
             let html = '<div class="tt-grid">';
             // Kopfzeile
@@ -1620,6 +1754,7 @@ themeToggle.addEventListener('click', () => {
                     let cls = 'tt-subject-cell';
                     if (isToday) cls += ' today-col';
                     if (hasExam) cls += ' has-exam';
+                    if (homeworkHighlights[day] && homeworkHighlights[day].length) cls += ' has-homework';
 
                     html += `<div class="${cls}">`;
                     if (subject) {
@@ -1628,6 +1763,11 @@ themeToggle.addEventListener('click', () => {
                     }
                     examList.forEach(ex => {
                         html += `<span class="tt-exam-badge">📝 ${escapeHtml(ex.subject)}</span>`;
+                    });
+                    // Hausaufgaben desselben Tages einfügen
+                    const hwList = homeworkHighlights[day] || [];
+                    hwList.forEach(hw => {
+                        html += `<span class="tt-homework-badge">📚 ${escapeHtml(hw)}</span>`;
                     });
                     html += '</div>';
                 });
@@ -1725,8 +1865,9 @@ themeToggle.addEventListener('click', () => {
         }
 
         // ===== HAUSAUFGABEN =====
-        function renderHomework() {
-            const grid = document.getElementById('homeworkGrid');
+        // renderHomework(editable, containerId)
+        function renderHomework(editable = true, containerId = 'homeworkGrid') {
+            const grid = document.getElementById(containerId);
             if (!grid) return;
             const todayKey = getCurrentDayKey();
             let html = '<div class="tt-homework-grid">';
@@ -1741,11 +1882,14 @@ themeToggle.addEventListener('click', () => {
                         <span>${escapeHtml(hw)}</span>
                     </div>`;
                 });
-                html += `<div class="tt-hw-input-row">
-                    <input class="tt-hw-input" type="text" id="hwInput_${day}" placeholder="Hausaufgabe..."
-                           onkeydown="if(event.key==='Enter') addHomework('${day}')">
-                    <button class="tt-hw-add-btn" onclick="addHomework('${day}')">+</button>
-                </div></div>`;
+                if (editable) {
+                    html += `<div class="tt-hw-input-row">
+                        <input class="tt-hw-input" type="text" id="hwInput_${day}" placeholder="Hausaufgabe..."
+                               onkeydown="if(event.key==='Enter') addHomework('${day}')">
+                        <button class="tt-hw-add-btn" onclick="addHomework('${day}')">+</button>
+                    </div>`;
+                }
+                html += '</div>';
             });
             html += '</div>';
             grid.innerHTML = html;
@@ -1757,14 +1901,20 @@ themeToggle.addEventListener('click', () => {
             if (!homework[day]) homework[day] = [];
             homework[day].push(input.value.trim());
             localStorage.setItem('homework_data', JSON.stringify(homework));
-            renderHomework();
+            renderHomework(true, 'homeworkGrid');
+            renderHomework(false, 'homeworkGridTimetable');
+            renderTimetableView();
+            renderOverviewHomeworks();
         }
 
         function deleteHomework(day, index) {
             if (!homework[day]) return;
             homework[day].splice(index, 1);
             localStorage.setItem('homework_data', JSON.stringify(homework));
-            renderHomework();
+            renderHomework(true, 'homeworkGrid');
+            renderHomework(false, 'homeworkGridTimetable');
+            renderTimetableView();
+            renderOverviewHomeworks();
         }
 
         // ===== KLASSENARBEITEN =====
@@ -1790,12 +1940,16 @@ themeToggle.addEventListener('click', () => {
             if (periodEl) periodEl.value = '';
 
             renderExams();
+            renderCalendar();
+            renderOverviewCalendar();
         }
 
         function deleteExam(index) {
             exams.splice(index, 1);
             localStorage.setItem('exams_data', JSON.stringify(exams));
             renderExams();
+            renderCalendar();
+            renderOverviewCalendar();
         }
 
         function renderExams() {
@@ -1832,6 +1986,122 @@ themeToggle.addEventListener('click', () => {
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        // ===== CALENDAR (Monatsansicht) =====
+        let currentCalMonth;
+        let currentCalYear;
+        let currentSelectedDate = null; // für Anzeige der Tagesereignisse
+
+        function initCalendar() {
+            const today = new Date();
+            currentCalMonth = today.getMonth();
+            currentCalYear = today.getFullYear();
+            renderCalendar();
+        }
+
+        function renderCalendar() {
+            const container = document.getElementById('calendarGrid');
+            const label = document.getElementById('calendarMonthLabel');
+            if (!container || !label) return;
+
+            // Monat/Jahr anzeigen
+            const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+            label.textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
+
+            // erste Wochentag des Monats
+            const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay(); // 0=Sonntag
+            const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+
+            // grid aufbauen
+            let html = '<tr>';
+            ['So','Mo','Di','Mi','Do','Fr','Sa'].forEach(d => html += '<th>'+d+'</th>');
+            html += '</tr>';
+
+            let day = 1;
+            for (let week = 0; week < 6; week++) {
+                html += '<tr>';
+                for (let w = 0; w < 7; w++) {
+                    const cellIndex = week * 7 + w;
+                    const isBlank = week === 0 && w < firstDay;
+                    let content = '';
+                    let dateStr = '';
+                    if (!isBlank && day <= daysInMonth) {
+                        const d = day;
+                        dateStr = `${currentCalYear}-${String(currentCalMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        content = `<div class="cal-day-number">${d}</div>`;
+                        // event indicator
+                        const events = getAllCalendarItems().filter(ev => ev.date === dateStr);
+                        if (events.length) {
+                            content += '<div class="event-dot"></div>';
+                        }
+                        day++;
+                    }
+                    html += `<td data-date="${dateStr}" onclick="showEventsForDate('${dateStr}')">${content}</td>`;
+                }
+                html += '</tr>';
+            }
+            container.innerHTML = html;
+        }
+
+        function showEventsForDate(dateStr) {
+            const listEl = document.getElementById('calendarEventList');
+            const label = document.getElementById('calendarDayLabel');
+            const wrapper = document.getElementById('calendarDayEvents');
+            if (!listEl || !label || !wrapper) return;
+            currentSelectedDate = dateStr;
+            if (!dateStr) {
+                wrapper.style.display = 'none';
+                return;
+            }
+            const d = new Date(dateStr + 'T00:00:00');
+            label.textContent = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month:'2-digit', year:'numeric' });
+            const events = getAllCalendarItems().filter(ev => ev.date === dateStr);
+            if (!events.length) {
+                listEl.innerHTML = '<p style="color:var(--color-text-muted)">Keine Ereignisse</p>';
+            } else {
+                listEl.innerHTML = events.map(ev => {
+                    const icon = ev.type === 'exam' ? '📝' : ev.type === 'todo' ? '✅' : '📌';
+                    let deleteBtn = '';
+                    if (ev.type === 'extra') {
+                        const idx = calendarExtras.findIndex(e => e.date === ev.date && e.title === ev.title && e.description === ev.description);
+                        if (idx !== -1) {
+                            deleteBtn = `<button class="btn-icon" onclick="deleteCalendarEvent(${idx})" title="Löschen">🗑️</button>`;
+                        }
+                    }
+                    return `<div class="calendar-event-item ${ev.type}">${icon} <strong>${escapeHtml(ev.title)}</strong>${ev.description ? ' – ' + escapeHtml(ev.description) : ''}${deleteBtn}</div>`;
+                }).join('');
+            }
+            wrapper.style.display = 'block';
+        }
+
+        function prevMonth() {
+            currentCalMonth--;
+            if (currentCalMonth < 0) {
+                currentCalMonth = 11;
+                currentCalYear--;
+            }
+            renderCalendar();
+            // clear selection
+            showEventsForDate(null);
+        }
+        function nextMonth() {
+            currentCalMonth++;
+            if (currentCalMonth > 11) {
+                currentCalMonth = 0;
+                currentCalYear++;
+            }
+            renderCalendar();
+            showEventsForDate(null);
+        }
+
+        function deleteCalendarEvent(idx) {
+            if (idx < 0 || idx >= calendarExtras.length) return;
+            calendarExtras.splice(idx, 1);
+            saveCalendarExtras();
+            renderCalendar();
+            if (currentSelectedDate) showEventsForDate(currentSelectedDate);
+            renderOverviewCalendar();
         }
 
         // ===== ÜBERSICHT VORSCHAUEN =====
@@ -1905,6 +2175,63 @@ themeToggle.addEventListener('click', () => {
                         <div style="font-size:0.8rem;color:var(--color-text-muted);">${dateStr}${exam.topic ? ' · ' + escapeHtml(exam.topic) : ''}</div>
                     </div>
                     <span style="font-size:0.9rem;color:var(--color-warning);">⏳</span>
+                </div>`;
+            }).join('');
+        }
+
+        function renderOverviewHomeworks() {
+            const container = document.getElementById('overviewHomeworks');
+            if (!container) return;
+            const items = [];
+            TT_DAYS.forEach(day => {
+                const list = homework[day] || [];
+                list.forEach(hw => {
+                    items.push({ day, text: hw });
+                });
+            });
+            // sort by day order
+            items.sort((a,b) => TT_DAY_INDEX[a.day] - TT_DAY_INDEX[b.day]);
+            const upcoming = items.slice(0,3);
+            if (!upcoming.length) {
+                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Keine Hausaufgaben eingetragen</p>';
+                return;
+            }
+            container.innerHTML = upcoming.map(item => {
+                const dayName = TT_DAY_NAMES[item.day];
+                return `<div class="grade-item">
+                    <div>
+                        <div>${escapeHtml(item.text)}</div>
+                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${escapeHtml(dayName)}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function renderOverviewCalendar() {
+            const container = document.getElementById('overviewCalendar');
+            if (!container) return;
+            const items = getAllCalendarItems();
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const upcoming = items
+                .filter(ev => new Date(ev.date + 'T00:00:00') >= today)
+                .sort((a,b) => new Date(a.date) - new Date(b.date))
+                .slice(0,3);
+            if (!upcoming.length) {
+                container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Keine kommenden Termine</p>';
+                return;
+            }
+            container.innerHTML = upcoming.map(ev => {
+                const d = new Date(ev.date + 'T00:00:00');
+                const dateStr = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+                let icon = '📌';
+                if (ev.type === 'exam') icon = '📝';
+                if (ev.type === 'todo') icon = '✅';
+                return `<div class="grade-item">
+                    <div>
+                        <div>${icon} ${escapeHtml(ev.title)}</div>
+                        <div style="font-size:0.8rem;color:var(--color-text-muted);">${dateStr}${ev.description ? ' · ' + escapeHtml(ev.description) : ''}</div>
+                    </div>
                 </div>`;
             }).join('');
         }
@@ -1986,7 +2313,9 @@ themeToggle.addEventListener('click', () => {
         function renderOverview() {
             renderOverviewTimetable();
             renderOverviewTodos();
+            renderOverviewHomeworks();
             renderOverviewExams();
+            renderOverviewCalendar();
             renderOverviewGrades();
             renderOverviewFiles();
             renderOverviewMessages();
@@ -1994,11 +2323,33 @@ themeToggle.addEventListener('click', () => {
 
         // ===== INITIALISIERUNG =====
         renderTimetableView();
-        renderHomework();
+        // zwei Versionen: vollständige Ansicht im Homework-Tab, Vorschau im Stundenplan
+        renderHomework(true, 'homeworkGrid');
+        renderHomework(false, 'homeworkGridTimetable');
         renderExams();
         loadGrades();
         loadTodos();
+        initCalendar();
         renderOverview();
+
+        // ===== CALENDAR EVENT HANDLING =====
+        function addCalendarEvent() {
+            const titleEl = document.getElementById('eventTitle');
+            const dateEl  = document.getElementById('eventDate');
+            const descEl  = document.getElementById('eventDesc');
+            if (!titleEl.value.trim() || !dateEl.value) return;
+            calendarExtras.push({
+                title: titleEl.value.trim(),
+                date: dateEl.value,
+                description: descEl ? descEl.value.trim() : ''
+            });
+            saveCalendarExtras();
+            titleEl.value = '';
+            dateEl.value  = '';
+            if (descEl) descEl.value = '';
+            renderCalendar();
+            renderOverviewCalendar();
+        }
 
         // ===== ACCOUNT SETTINGS MODAL =====
 
