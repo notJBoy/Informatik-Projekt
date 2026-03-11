@@ -1,1 +1,39 @@
-a
+# Dokumentation: Stundenplan-Farben Implementierung
+
+## Datum: 03.10.2026
+
+## Zusammenfassung der Änderungen
+
+Der Benutzer wollte die Möglichkeit, Farben für die Fächer im Stundenplan anzugeben, sodass die Kästen diese Farben annehmen.
+
+### Implementierte Features:
+- **Farbauswahl im Bearbeitungsmodus**: Jedes Fach hat jetzt ein Dropdown-Menü mit 30 vordefinierten Farben (z.B. Schwarz, Rot, Grün, etc.).
+- **Standardfarbe**: Schwarz (#000000) statt Weiß.
+- **Anzeige**: Die Stundenplan-Kästen verwenden die gewählte Farbe als Hintergrund.
+- **Speicherung**: Farbe wird in localStorage zusammen mit Fach und Raum gespeichert.
+
+### Technische Änderungen:
+- **Konstante hinzugefügt**: `TIMETABLE_COLORS` als Array von Objekten mit Name und Hex-Wert.
+- **renderTimetableEdit()**: Dropdown statt Color-Picker.
+- **saveTimetable()**: Farbe auslesen und speichern.
+- **renderTimetableView()**: Farbe auf die Zellen anwenden.
+- **CSS**: Styling für das Select-Feld hinzugefügt.
+
+### Code-Schnipsel:
+```javascript
+const TIMETABLE_COLORS = [
+    { name: 'Schwarz', value: '#000000' },
+    { name: 'Rot', value: '#FF0000' },
+    // ... weitere 28 Farben
+];
+```
+
+```html
+<select id="tt_${day}_${p}_color" title="Farbe">
+    <option value="#000000" selected style="background-color: #000000; color: white;">Schwarz</option>
+    <!-- weitere Optionen -->
+</select>
+```
+
+### Ergebnis:
+Der Stundenplan ist jetzt farblich individualisierbar, mit einer benutzerfreundlichen Auswahl ohne Hex-Codes.
