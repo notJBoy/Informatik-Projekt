@@ -2241,7 +2241,7 @@ themeToggle.addEventListener('click', () => {
             if (!container) return;
             container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>';
             try {
-                const res = await fetch(`http://localhost:8000/grades/${CURRENT_USER_ID}`);
+                const res = await fetch('grades/grades_load.php');
                 if (!res.ok) throw new Error();
                 const grades = await res.json();
                 if (!grades.length) {
@@ -2469,8 +2469,12 @@ themeToggle.addEventListener('click', () => {
             const list = document.getElementById('gradesList');
             if (!list) return;
             try {
-                const res = await fetch(`http://localhost:8000/grades/${CURRENT_USER_ID}`);
-                if (!res.ok) return;
+                const res = await fetch('grades/grades_load.php');
+                if (!res.ok) {
+                    console.error('Fehler beim Laden der Noten, Status', res.status);
+                    list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Fehler beim Laden der Noten</p>';
+                    return;
+                }
                 const grades = await res.json();
                 if (!grades.length) {
                     list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Noch keine Noten eingetragen</p>';
@@ -2488,7 +2492,10 @@ themeToggle.addEventListener('click', () => {
                         </div>
                     </div>
                 `).join('');
-            } catch { /* Server nicht erreichbar */ }
+            } catch (err) {
+                console.error('Netzwerkfehler beim Laden der Noten', err);
+                list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Server nicht erreichbar</p>';
+            }
         }
 
         async function addGrade() {
@@ -2499,7 +2506,7 @@ themeToggle.addEventListener('click', () => {
             const value = parseFloat(valueInput.value);
             if (isNaN(value) || value < 0 || value > 15) return;
             try {
-                const res = await fetch(`http://localhost:8000/grades/${CURRENT_USER_ID}`, {
+                const res = await fetch('grades/grade_add.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -2513,14 +2520,20 @@ themeToggle.addEventListener('click', () => {
                     valueInput.value   = '';
                     if (descInput) descInput.value = '';
                     loadGrades();
+                } else {
+                    console.error('Fehler beim Speichern der Note, Status', res.status);
+                    alert('Noten konnten nicht gespeichert werden. Sieh in die Konsole.');
                 }
-            } catch { /* Server nicht erreichbar */ }
+            } catch (err) {
+                console.error('Netzwerkfehler beim Speichern der Note', err);
+                alert('Server nicht erreichbar – bitte Backend starten oder CORS prüfen.');
+            }
         }
 
         async function removeGrade(gradeId) {
             if (!confirm('Note wirklich löschen?')) return;
             try {
-                const res = await fetch(`http://localhost:8000/grades/${CURRENT_USER_ID}/${gradeId}`, {
+                const res = await fetch('grades/grade_delete.php?grade_id=' + encodeURIComponent(gradeId), {
                     method: 'DELETE'
                 });
                 if (res.ok) {

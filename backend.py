@@ -30,6 +30,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# CORS erlauben, damit das PHP‑Frontend (oder andere Hosts) die API ansprechen kann
+# während der Entwicklung ist "*" ok, später enger einschränken.
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],              # Alternativ: ["http://localhost:8080"]
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 DB_NAME = "learnhub.db"
 
 
