@@ -109,13 +109,36 @@ def init_db():
     """)
 
     # TIMETABLE
+    # original structure contained only day/time/subject; we extend with period and room
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS timetable (
         id TEXT PRIMARY KEY,
         user_id TEXT,
         day TEXT,
+        period INTEGER,
         time TEXT,
-        subject TEXT
+        subject TEXT,
+        room TEXT
+    )
+    """)
+    # ensure new columns exist in older databases
+    try:
+        cursor.execute("ALTER TABLE timetable ADD COLUMN period INTEGER")
+    except Exception:
+        pass  # column already present
+    try:
+        cursor.execute("ALTER TABLE timetable ADD COLUMN room TEXT")
+    except Exception:
+        pass  # column already present
+
+    # separate table for storing period times; this allows the user to configure slot times even if
+    # no classes are set in that period
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS timetable_times (
+        user_id TEXT,
+        period INTEGER,
+        time TEXT,
+        PRIMARY KEY(user_id, period)
     )
     """)
 
@@ -240,8 +263,15 @@ class FlashcardCardCreate(BaseModel):
 
 class TimetableCreate(BaseModel):
     day: str       # monday, tuesday, ...
-    time: str      # "08:00 - 09:30"
+    period: int    # 1..10 (Stunde im Raster)
+    time: str      # "08:00 - 09:30" (eingetragene Zeit für diese Stunde)
     subject: str
+    room: Optional[str] = ""
+
+
+class TimetableBulk(BaseModel):
+    entries: List[TimetableCreate] = []
+    times: Optional[dict] = {}
 
 
 # =========================================
@@ -350,11 +380,12 @@ def get_timetable(user_id: str):
     db = get_db()
     cursor = db.cursor()
 
+    # include period and room so frontend can rebuild grid correctly
     cursor.execute("""
-    SELECT id, day, time, subject
+    SELECT id, day, period, time, subject, room
     FROM timetable
     WHERE user_id=?
-    ORDER BY day, time
+    ORDER BY day, period
     """, (user_id,))
 
     return cursor.fetchall()
@@ -373,13 +404,15 @@ def add_timetable_entry(user_id: str, entry: TimetableCreate):
     cursor = db.cursor()
 
     cursor.execute("""
-    INSERT INTO timetable VALUES (?, ?, ?, ?, ?)
+    INSERT INTO timetable VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         generate_id(),
         user_id,
         entry.day,
+        entry.period,
         entry.time,
-        entry.subject
+        entry.subject,
+        entry.room
     ))
 
     db.commit()
@@ -399,12 +432,14 @@ def update_timetable_entry(
 
     cursor.execute("""
     UPDATE timetable
-    SET day=?, time=?, subject=?
+    SET day=?, period=?, time=?, subject=?, room=?
     WHERE id=? AND user_id=?
     """, (
         entry.day,
+        entry.period,
         entry.time,
         entry.subject,
+        entry.room,
         entry_id,
         user_id
     ))
@@ -431,6 +466,50 @@ def delete_timetable_entry(user_id: str, entry_id: str):
 
     db.commit()
     return {"message": "Stunde gelöscht"}
+
+
+# bulk replace all timetable entries for a user (used when the entire plan is saved)
+@app.get("/timetable_times/{user_id}")
+def get_timetable_times(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT period, time FROM timetable_times WHERE user_id=?", (user_id,))
+    rows = cursor.fetchall()
+    return {str(r["period"]): r["time"] for r in rows}
+
+
+@app.post("/timetable/{user_id}/bulk")
+def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
+    db = get_db()
+    cursor = db.cursor()
+
+    # ---- timetable entries ----
+    cursor.execute("DELETE FROM timetable WHERE user_id=?", (user_id,))
+    for entry in bulk.entries:
+        cursor.execute("""
+        INSERT INTO timetable VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            generate_id(),
+            user_id,
+            entry.day,
+            entry.period,
+            entry.time,
+            entry.subject,
+            entry.room
+        ))
+
+    # ---- period times ----
+    cursor.execute("DELETE FROM timetable_times WHERE user_id=?", (user_id,))
+    if bulk.times:
+        for period_str, t in bulk.times.items():
+            try:
+                period = int(period_str)
+            except Exception:
+                continue
+            cursor.execute("INSERT INTO timetable_times VALUES (?, ?, ?)", (user_id, period, t))
+
+    db.commit()
+    return {"message": "Stundenplan aktualisiert"}
 
 
 # =========================================
@@ -624,6 +703,7 @@ def delete_account(user_id: str, data: DeleteAccountRequest):
     cursor.execute("DELETE FROM todos WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM grades WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM timetable WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM timetable_times WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM flashcards WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM files WHERE user_id=?", (user_id,))
 

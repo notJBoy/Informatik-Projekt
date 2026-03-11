@@ -1464,6 +1464,42 @@ themeToggle.addEventListener('click', () => {
             }
         }
 
+        // ===== STUNDENPLAN API =====
+        async function loadTimetable() {
+            try {
+                // entries
+                const res = await fetch('timetable/timetable_load.php');
+                if (res.ok) {
+                    const rows = await res.json();
+                    // only replace if backend actually returned something
+                    if (rows && rows.length) {
+                        timetableData = {};
+                        rows.forEach(r => {
+                            if (!timetableData[r.day]) timetableData[r.day] = {};
+                            timetableData[r.day][r.period] = {
+                                subject: r.subject || '',
+                                room: r.room || ''
+                            };
+                        });
+                        localStorage.setItem('timetable_data', JSON.stringify(timetableData));
+                    }
+                }
+                // times table via PHP proxy
+                const timesRes = await fetch('timetable/timetable_times.php');
+                if (timesRes.ok) {
+                    const timesObj = await timesRes.json();
+                    if (timesObj && Object.keys(timesObj).length) {
+                        timetableTimes = { ...DEFAULT_TIMES, ...timesObj };
+                        localStorage.setItem('timetable_times', JSON.stringify(timetableTimes));
+                    }
+                }
+            } catch (e) {
+                console.error('Timetable load error', e);
+            }
+            renderTimetableView();
+            renderOverviewTimetable();
+        }
+
         function setTodoFilter(filter, btn) {
             todoFilter = filter;
             document.querySelectorAll('.todo-filter-btn').forEach(b => b.classList.remove('active'));
@@ -1881,7 +1917,7 @@ themeToggle.addEventListener('click', () => {
             document.getElementById('timetableEditBtn').textContent = '✏️ Bearbeiten';
         }
 
-        function saveTimetable() {
+        async function saveTimetable() {
             // Zeiten speichern
             for (let p = 1; p <= 10; p++) {
                 const inp = document.getElementById(`periodTime_${p}`);
@@ -1904,8 +1940,35 @@ themeToggle.addEventListener('click', () => {
             timetableData = newData;
             localStorage.setItem('timetable_data', JSON.stringify(timetableData));
 
+            // Synchronisation mit Backend
+            try {
+                const entries = [];
+                TT_DAYS.forEach(day => {
+                    for (let p = 1; p <= 10; p++) {
+                        const cell = (timetableData[day] || {})[p];
+                        if (cell && cell.subject) {
+                            entries.push({
+                                day: day,
+                                period: p,
+                                time: timetableTimes[p] || '',
+                                subject: cell.subject,
+                                room: cell.room || ''
+                            });
+                        }
+                    }
+                });
+                await fetch('timetable/timetable_save.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ entries: entries, times: timetableTimes })
+                });
+            } catch (err) {
+                console.error('Fehler beim Speichern des Stundenplans auf dem Server', err);
+            }
+
             cancelTimetableEdit();
             renderTimetableView();
+            renderOverviewTimetable();
         }
 
         // ===== HAUSAUFGABEN =====
@@ -2165,7 +2228,46 @@ themeToggle.addEventListener('click', () => {
                 return;
             }
 
-            container.innerHTML = entries.slice(0, 5).map(([period, cell]) => `
+            // helper: determine current period by comparing now to entered times
+            // we consider the period current if now is between its start and the next period's start
+            function getCurrentPeriod() {
+                const now = new Date();
+                const hhmm = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', hour12: false });
+                // build sorted list of available periods
+                const periods = entries.map(([p]) => parseInt(p)).sort((a,b)=>a-b);
+                for (let i = 0; i < periods.length; i++) {
+                    const p = periods[i];
+                    const start = timetableTimes[p] || '';
+                    if (!start) continue;
+                    const nextStart = (i+1 < periods.length) ? (timetableTimes[periods[i+1]] || '') : null;
+                    if (hhmm >= start && (nextStart === null || hhmm < nextStart)) {
+                        return p;
+                    }
+                }
+                return null;
+            }
+
+            const curr = getCurrentPeriod();
+            let shown = [];
+            if (curr !== null) {
+                // add current
+                const cell = (todayData[curr] || {});
+                if (cell && cell.subject) shown.push([curr.toString(), cell]);
+                // find next available period in sorted order
+                const avail = entries.map(([p])=>parseInt(p)).sort((a,b)=>a-b);
+                const idx = avail.indexOf(curr);
+                if (idx !== -1 && idx+1 < avail.length) {
+                    const np = avail[idx+1];
+                    const nextCell = (todayData[np] || {});
+                    if (nextCell && nextCell.subject) shown.push([np.toString(), nextCell]);
+                }
+            }
+            if (shown.length === 0) {
+                // fallback: just show first two entries of day
+                shown = entries.slice(0, 2);
+            }
+
+            container.innerHTML = shown.map(([period, cell]) => `
                 <div class="timetable-day">
                     <span class="day-name">${escapeHtml(timetableTimes[period] || period + '.')}</span>
                     <div class="day-classes">
@@ -2366,6 +2468,7 @@ themeToggle.addEventListener('click', () => {
         }
 
         // ===== INITIALISIERUNG =====
+        loadTimetable();
         renderTimetableView();
         // zwei Versionen: vollständige Ansicht im Homework-Tab, Vorschau im Stundenplan
         renderHomework(true, 'homeworkGrid');
