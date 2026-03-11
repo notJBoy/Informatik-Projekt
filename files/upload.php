@@ -1,14 +1,18 @@
 <?php
 session_start();
 
+$filesTabRedirect = "Location: ../current_dashboard.php?tab=dateien";
+
 if (!isset($_SESSION['user_id'])) {
-    die("Nicht eingeloggt");
+    header("Location: ../auth/login.php");
+    exit();
 }
 
 $user_id = $_SESSION['user_id'];
 
 if (!isset($_FILES['file'])) {
-    die("Keine Datei empfangen");
+    header($filesTabRedirect . "&upload=error");
+    exit();
 }
 
 $subject = $_POST['subject'];
@@ -33,15 +37,20 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
 
 $response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if ($response === false) {
-    die("cURL Fehler: " . curl_error($ch));
+    curl_close($ch);
+    header($filesTabRedirect . "&upload=error");
+    exit();
 }
 
 curl_close($ch);
 
-echo "<pre>";
-echo "Backend Antwort:\n";
-echo $response;
-echo "</pre>";
+if ($httpCode >= 200 && $httpCode < 300) {
+    header($filesTabRedirect . "&upload=success");
+    exit();
+}
+
+header($filesTabRedirect . "&upload=error");
 exit();

@@ -1356,6 +1356,50 @@ themeToggle.addEventListener('click', () => {
         const navItems = document.querySelectorAll('.nav-item');
         const viewContents = document.querySelectorAll('.view-content');
 
+        function mapTabParamToView(tabParam) {
+            if (!tabParam) return 'overview';
+
+            const normalized = String(tabParam).trim().toLowerCase();
+            const tabMap = {
+                overview: 'overview',
+                ueberblick: 'overview',
+                'uberblick': 'overview',
+                timetable: 'timetable',
+                stundenplan: 'timetable',
+                grades: 'grades',
+                noten: 'grades',
+                todos: 'todos',
+                todo: 'todos',
+                aufgaben: 'todos',
+                exams: 'exams',
+                klassenarbeiten: 'exams',
+                homework: 'homework',
+                hausaufgaben: 'homework',
+                calendar: 'calendar',
+                kalender: 'calendar',
+                flashcards: 'flashcards',
+                karteikarten: 'flashcards',
+                files: 'files',
+                dateien: 'files',
+                'admin-messages': 'admin-messages',
+                adminmessages: 'admin-messages',
+                admin: 'admin'
+            };
+
+            return tabMap[normalized] || 'overview';
+        }
+
+        function openViewById(viewId) {
+            const targetNav = document.querySelector(`.nav-item[data-view="${viewId}"]`);
+            if (targetNav) {
+                targetNav.click();
+                return;
+            }
+
+            const fallbackNav = document.querySelector('.nav-item[data-view="overview"]');
+            if (fallbackNav) fallbackNav.click();
+        }
+
         navItems.forEach(item => {
             item.addEventListener('click', () => {
                 const viewId = item.getAttribute('data-view');
@@ -2331,6 +2375,10 @@ themeToggle.addEventListener('click', () => {
         loadTodos();
         initCalendar();
         renderOverview();
+
+        const initialTabParam = new URLSearchParams(window.location.search).get('tab');
+        const initialView = mapTabParamToView(initialTabParam);
+        openViewById(initialView);
 
         // ===== CALENDAR EVENT HANDLING =====
         function addCalendarEvent() {

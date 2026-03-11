@@ -1,13 +1,15 @@
 <?php
 session_start();
 
+$filesTabRedirect = "Location: ../current_dashboard.php?tab=dateien";
+
 if (!isset($_SESSION['user_id'])) {
     header("Location: ../auth/login.php");
     exit();
 }
 
 if (!isset($_GET['file_id'])) {
-    header("Location: dashboard.php?delete=error");
+    header($filesTabRedirect . "&delete=error");
     exit();
 }
 
@@ -26,7 +28,7 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if ($response === false) {
     curl_close($ch);
-    header("Location: dashboard.php?delete=error");
+    header($filesTabRedirect . "&delete=error");
     exit();
 }
 
@@ -38,6 +40,6 @@ DELETE gibt oft 204 zurück → response leer
 Das ist trotzdem Erfolg!
 */
 
-header("Location: ../current_dashboard.php");
+header($filesTabRedirect . "&delete=success");
 
 exit();

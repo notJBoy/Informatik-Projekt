@@ -1,0 +1,54 @@
+Prompt (User)
+Füge foldendes hinzu: wenn man /currentdashboard.php?tab=ueberblick aufruft, soll man auf ueberblick kommen, wenn man /current_dashboard.php?tab=noten auf den noten tab usw. falls nichts angegeben kommt man auf ueberblick.  Schreibe meinen prompt, deine ausgabe und alles was du geändert hast in die heitige dokumentation von nik
+
+Ausgabe (Assistant)
+Umgesetzt:
+- URL-Parameter tab wird jetzt ausgewertet und auf die passenden Dashboard-Tabs gemappt.
+- /currentdashboard.php funktioniert jetzt ebenfalls und leitet intern auf current_dashboard.php weiter.
+- Ohne tab-Parameter (oder bei unbekanntem Wert) wird standardmäßig der Überblick geöffnet.
+
+Geänderte Dateien und Inhalte
+1) current_dashboard.php
+- Neue Funktion mapTabParamToView(tabParam):
+  - Mappt tab-Werte auf interne data-view IDs.
+  - Unterstützt u. a.: ueberblick -> overview, noten -> grades, stundenplan -> timetable, todos/aufgaben -> todos, klassenarbeiten -> exams, hausaufgaben -> homework, kalender -> calendar, karteikarten -> flashcards, dateien -> files, adminmessages -> admin-messages.
+  - Fallback: overview.
+- Neue Funktion openViewById(viewId):
+  - Öffnet den gewünschten Tab über die vorhandene Navigation (.nav-item[data-view=...]).
+  - Fallback auf overview, falls Tab nicht gefunden wird.
+- Initialisierung ergänzt:
+  - Liest tab aus window.location.search.
+  - Mappt tab auf interne View.
+  - Öffnet beim Laden automatisch den entsprechenden Tab.
+
+2) currentdashboard.php (neu)
+- Neu angelegt als Alias-Datei, damit die URL /currentdashboard.php ebenfalls funktioniert.
+- Inhalt:
+  <?php
+  require __DIR__ . '/current_dashboard.php';
+
+Validierung
+- php -l current_dashboard.php: keine Syntaxfehler
+- php -l currentdashboard.php: keine Syntaxfehler
+
+---
+
+Prompt (User)
+schreibe meinen prompt, deine ausgabe und was du geändert hast wieder in meine dokumentation
+
+Ausgabe (Assistant)
+Erledigt: Nach Datei-Upload und Datei-Löschen bleibst du jetzt auf dem Dateien-Tab über den URL-Parameter ?tab=dateien.
+
+Geändert wurde:
+- Redirect-Logik nach Upload in files/upload.php
+- Redirect-Logik nach Löschen (inkl. Fehlerfälle) in files/delete.php
+
+Details:
+- Erfolgreicher Upload: Weiterleitung auf ../current_dashboard.php?tab=dateien&upload=success
+- Fehlgeschlagener Upload: Weiterleitung auf ../current_dashboard.php?tab=dateien&upload=error
+- Erfolgreiches Löschen: Weiterleitung auf ../current_dashboard.php?tab=dateien&delete=success
+- Fehlgeschlagenes Löschen/ungültige Anfrage: Weiterleitung auf ../current_dashboard.php?tab=dateien&delete=error
+
+Validierung:
+- php -l files/upload.php: keine Syntaxfehler
+- php -l files/delete.php: keine Syntaxfehler
