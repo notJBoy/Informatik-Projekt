@@ -470,6 +470,110 @@ $user_id = $_SESSION['user_id'];
             background-color: var(--color-danger);
         }
 
+        .grade-average-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.65rem;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(12, 145, 255, 0.95), rgba(78, 30, 255, 0.95));
+            color: white;
+            box-shadow: 0 10px 18px rgba(7, 48, 96, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 190px;
+        }
+
+        .grade-average-title {
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            opacity: 0.95;
+        }
+
+        
+        .grade-average-circle-inner {
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.12);
+            display: grid;
+            place-items: center;
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+        }
+
+        .grade-average-meta {
+            font-size: 0.84rem;
+            opacity: 0.95;
+            letter-spacing: 0.02em;
+        }
+
+        .grade-average-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--color-primary-variant, #2a9fd6), var(--color-primary-dark, #1f6fb2));
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .grade-average-circle {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            background: conic-gradient(var(--fill-color, #ffd700) var(--pct, 0%), rgba(255,255,255,0.15) 0%);
+            display: grid;
+            place-items: center;
+        }
+
+        .grade-average-circle::after {
+            content: '';
+            position: absolute;
+            width: 74px;
+            height: 74px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 0;
+        }
+
+        .grade-average-circle > span {
+            position: relative;
+            z-index: 1;
+            font-size: 1.15rem;
+            font-weight: 700;
+        }
+
+        .grade-average-bar {
+            width: 100%;
+            background: rgba(255,255,255,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+            height: 12px;
+        }
+
+        .grade-average-bar-fill {
+            height: 100%;
+            width: 0;
+            border-radius: 8px;
+            background: linear-gradient(90deg, #f4eb38, #f3b01f);
+            transition: width 1.2s ease;
+        }
+
+        .grade-average-meta {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
         /* To-Do Widget */
         .todo-list {
             display: flex;
@@ -2414,7 +2518,25 @@ themeToggle.addEventListener('click', () => {
                     container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Noch keine Noten eingetragen</p>';
                     return;
                 }
-                container.innerHTML = grades.slice(-3).reverse().map(g => `
+                let totalWeighted = 0;
+                let sumWeighted = 0;
+                grades.forEach(g => {
+                    const w = (!g.weight || Number(g.weight) <= 0) ? 1 : Number(g.weight);
+                    totalWeighted += w;
+                    sumWeighted += Number(g.value) * w;
+                });
+                const avg = totalWeighted > 0 ? (sumWeighted / totalWeighted).toFixed(2) : '0.00';
+                const avgPercent = Math.min(100, Math.round((Number(avg) / 15) * 100));
+
+                const recentGrades = grades.slice(-3).reverse();
+                container.innerHTML = `
+                    <div class="grade-average-card" style="background: linear-gradient(135deg, rgba(27, 240, 229, 0.85), rgba(77, 120, 247, 0.95));">
+                        <div class="grade-average-title">Durchschnitt</div>
+                        <div class="grade-average-circle" style="background: ${buildCircleColor(avg)};">
+                            <div class="grade-average-circle-inner">${avg} P</div>
+                        </div>
+                    </div>
+                ` + recentGrades.map(g => `
                     <div class="grade-item">
                         <div>
                             <span class="grade-subject">${escapeHtml(g.subject)}</span>
@@ -2687,6 +2809,15 @@ themeToggle.addEventListener('click', () => {
             return 'danger';
         }
 
+        function buildCircleColor(average) {
+            const avg = Number(average);
+            if (avg >= 12) return '#2bbd64';      // kräftiges grün
+            if (avg >= 9) return '#a2dd42';       // limettengelb
+            if (avg >= 6) return '#ffd800';       // gelb
+            if (avg >= 3) return '#ff9300';       // orange
+            return '#ff4b4b';                     // rot
+        }
+
         async function loadGrades() {
             const list = document.getElementById('gradesList');
             if (!list) return;
@@ -2702,7 +2833,28 @@ themeToggle.addEventListener('click', () => {
                     list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Noch keine Noten eingetragen</p>';
                     return;
                 }
-                list.innerHTML = grades.map(g => `
+
+                let totalWeighted = 0;
+                let sumWeighted = 0;
+                grades.forEach(g => {
+                    const w = (!g.weight || Number(g.weight) <= 0) ? 1 : Number(g.weight);
+                    totalWeighted += w;
+                    sumWeighted += Number(g.value) * w;
+                });
+                const average = totalWeighted > 0 ? (sumWeighted / totalWeighted).toFixed(2) : '0.00';
+
+                const avgPercent = Math.min(100, Math.round((Number(average) / 15) * 100));
+                const circleColor = buildCircleColor(average);
+                list.innerHTML = `
+                    <div class="grade-average-card">
+                        <div class="grade-average-title">Durchschnitt</div>
+                        <div class="grade-average-circle" style="background: ${circleColor};">
+                            <div class="grade-average-circle-inner">${average}</div>
+                        </div>
+                    </div>
+                ` + grades.map(g => {
+                    const w = (!g.weight || Number(g.weight) <= 0) ? 1 : Number(g.weight);
+                    return `
                     <div class="grade-item" id="grade-${g.id}">
                         <div>
                             <span class="grade-subject">${escapeHtml(g.subject)}</span>
@@ -2710,10 +2862,12 @@ themeToggle.addEventListener('click', () => {
                         </div>
                         <div style="display:flex;align-items:center;gap:0.5rem;">
                             <span class="grade-value ${getGradeClass(g.value)}">${g.value} P</span>
+                            <small style="color:var(--color-text-muted);">x${w}</small>
                             <button class="btn-icon" onclick="removeGrade('${g.id}')" title="Löschen">🗑️</button>
                         </div>
                     </div>
-                `).join('');
+                `;
+                }).join('');
             } catch (err) {
                 console.error('Netzwerkfehler beim Laden der Noten', err);
                 list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Server nicht erreichbar</p>';
@@ -2723,10 +2877,13 @@ themeToggle.addEventListener('click', () => {
         async function addGrade() {
             const subjectInput = document.getElementById('gradeSubject');
             const valueInput   = document.getElementById('gradeValue');
+            const weightInput  = document.getElementById('gradeWeight');
             const descInput    = document.getElementById('gradeDescription');
             if (!subjectInput.value.trim() || valueInput.value === '') return;
             const value = parseFloat(valueInput.value);
+            const weight = parseFloat(weightInput.value);
             if (isNaN(value) || value < 0 || value > 15) return;
+            if (isNaN(weight) || weight <= 0) return;
             try {
                 const res = await fetch('grades/grade_add.php', {
                     method: 'POST',
@@ -2734,12 +2891,14 @@ themeToggle.addEventListener('click', () => {
                     body: JSON.stringify({
                         subject: subjectInput.value.trim(),
                         value: value,
+                        weight: weight,
                         description: descInput ? descInput.value.trim() : ''
                     })
                 });
                 if (res.ok) {
                     subjectInput.value = '';
                     valueInput.value   = '';
+                    weightInput.value  = '1';
                     if (descInput) descInput.value = '';
                     loadGrades();
                 } else {

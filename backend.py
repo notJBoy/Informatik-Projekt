@@ -130,9 +130,16 @@ def init_db():
         subject TEXT,
         value REAL,
         description TEXT,
-        date TEXT
+        date TEXT,
+        weight REAL DEFAULT 1
     )
     """)
+
+    # Add weight column if it doesn't exist yet (migration path for existing DBs)
+    try:
+        cursor.execute("ALTER TABLE grades ADD COLUMN weight REAL DEFAULT 1")
+    except Exception:
+        pass  # column already present
 
     # TIMETABLE
     # original structure contained only day/time/subject; we extend with period and room
@@ -390,6 +397,7 @@ class TodoCreate(BaseModel):
 class GradeCreate(BaseModel):
     subject: str
     value: float
+    weight: float = 1.0
     description: Optional[str] = ""
 
     
@@ -1065,14 +1073,15 @@ def add_grade(user_id: str, grade: GradeCreate):
     cursor = db.cursor()
 
     cursor.execute("""
-    INSERT INTO grades VALUES (?, ?, ?, ?, ?, ?)
+    INSERT INTO grades VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
         generate_id(),
         user_id,
         grade.subject,
         grade.value,
         grade.description,
-        datetime.utcnow().isoformat()
+        datetime.utcnow().isoformat(),
+        grade.weight if grade.weight and grade.weight > 0 else 1.0
     ))
 
     db.commit()

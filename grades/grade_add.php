@@ -21,6 +21,7 @@ $backend_url = "http://127.0.0.1:8000/grades/$user_id";
 $payload = json_encode([
     'subject'     => $input['subject'],
     'value'       => $input['value'],
+    'weight'      => isset($input['weight']) && is_numeric($input['weight']) && $input['weight'] > 0 ? $input['weight'] : 1,
     'description' => $input['description'] ?? ''
 ]);
 
