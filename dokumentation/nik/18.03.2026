@@ -141,3 +141,123 @@ Umgesetzt wurde:
 ## Zusatzvalidierung
 - `php -l current_dashboard.php`
 - Editor-Fehlerprüfung für `current_dashboard.php`: keine Fehler
+
+---
+
+## Zusatzprompt (User)
+Aus dem Admin-Panel soll man admin nachchrichten schreiben sollen. Der plathalter ist bereits bestehend, implementiere die funktion. Dokumentiere meinen prompt, deine ausgabe und deine änderungen am code in der heutigen dokumentation von nik
+
+## Zusatzausgabe (Assistant)
+Admins können jetzt direkt im Admin-Panel Nachrichten verfassen, an alle Nutzer oder gezielt an einzelne Accounts senden und die gesendeten Nachrichten dort auch wieder löschen. Nutzer sehen diese Nachrichten anschließend im Tab „Admin Nachrichten“ und in der Übersicht nicht mehr als Platzhalter, sondern aus der Datenbank geladen.
+
+Umgesetzt wurde:
+- FastAPI um eine persistente Tabelle für Admin-Nachrichten erweitert.
+- Neue Backend-Routen für Nutzeransicht, Admin-Verwaltung, Senden und Löschen ergänzt.
+- Sessiongebundene PHP-Proxies für diese Nachrichtenfunktionen hinzugefügt.
+- Admin-Panel um ein Formular mit Empfängerauswahl und eine Liste der gesendeten Nachrichten erweitert.
+- Nachrichtenansicht und Übersichts-Widget an echte Backend-Daten angebunden.
+
+## Zusatzänderungen
+
+### 1) backend.py
+- Neue Tabelle ergänzt:
+  - `admin_messages`
+- Neues Pydantic-Modell ergänzt:
+  - `AdminMessageCreate`
+- Neue Routen ergänzt:
+  - `GET /messages/{user_id}`
+  - `GET /admin/messages/{requester_id}`
+  - `POST /admin/messages/{requester_id}`
+  - `DELETE /admin/messages/{requester_id}/{message_id}`
+- Admin-Prüfung für Verwaltungsaktionen über die bestehende `require_admin_user(...)`-Logik abgesichert.
+- Account-Löschung erweitert, damit Admin-Nachrichten beim Löschen eines Senders oder Empfängers mit entfernt werden.
+
+### 2) Neue PHP-Proxies für Admin-Nachrichten
+- `admin/messages_load.php`
+- `admin/messages_manage.php`
+- `admin/message_send.php`
+- `admin/message_delete.php`
+
+Funktion:
+- Nutzen die bestehende PHP-Session zur Ermittlung von `user_id`.
+- Leiten Requests per cURL an das FastAPI-Backend weiter.
+- Trennen sauber zwischen Nutzeransicht und Admin-Verwaltung.
+
+### 3) tabs/admin.php
+- Neues Formular zum Schreiben von Admin-Nachrichten ergänzt:
+  - Titel
+  - Empfänger-Auswahl
+  - Nachrichtentext
+- Statusanzeige für Erfolg/Fehler ergänzt.
+- Neue Liste `Gesendete Admin-Nachrichten` ergänzt, inklusive Aktualisieren-Button.
+
+### 4) tabs/admin-messages.php
+- Statische Beispielnachrichten entfernt.
+- Nachrichtenliste auf dynamisches Laden vorbereitet.
+- Aktualisieren-Button ergänzt.
+
+### 5) current_dashboard.php
+- Styles für Nachrichtenkarten, Empfänger-Badges, Textarea und Formularstatus ergänzt.
+- `refreshViewState(viewId)` erweitert:
+  - `admin-messages` lädt jetzt echte Nachrichten nach
+  - `admin` lädt jetzt zusätzlich die Nachrichtenverwaltung nach
+- Neue Zustände ergänzt:
+  - `adminMessagesCache`
+  - `adminMessageManagementCache`
+- Neue Hilfs- und Renderfunktionen ergänzt:
+  - `setAdminMessageStatus(...)`
+  - `formatAdminMessageDate(...)`
+  - `getAdminMessageRecipientLabel(...)`
+  - `buildAdminMessageMarkup(...)`
+  - `renderAdminMessagesList(...)`
+  - `renderAdminSentMessages(...)`
+  - `populateAdminMessageRecipients(...)`
+- Neue Lade- und Aktionsfunktionen ergänzt:
+  - `loadAdminMessages()`
+  - `loadAdminMessageManagement()`
+  - `sendAdminMessage()`
+  - `deleteAdminMessage(...)`
+- Initialisierung erweitert, damit Nachrichten beim Laden des Dashboards direkt vom Server geholt werden.
+
+### 6) SQLite-Laufzeitdaten
+- Durch die Initialisierung des aktualisierten Backends wurde die lokale Datenbankdatei um die neue Tabelle für Admin-Nachrichten erweitert.
+
+## Zusatzvalidierung
+- `python3 -m py_compile backend.py`
+- `php -l current_dashboard.php`
+- `php -l tabs/admin.php`
+- `php -l tabs/admin-messages.php`
+- `php -l admin/messages_load.php`
+- `php -l admin/messages_manage.php`
+- `php -l admin/message_send.php`
+- `php -l admin/message_delete.php`
+- Editor-Fehlerprüfung für alle geänderten Dateien: keine Fehler
+
+---
+
+## Zusatzprompt (User)
+wird das smtp passwort aus .env oder .venv genommen?
+
+## Zusatzausgabe (Assistant)
+Das SMTP-Passwort wird zuerst aus `.venv/.env` geladen. Die Projekt-`.env` dient nur als Fallback, falls die Variable vorher noch nicht gesetzt wurde.
+
+Begründung:
+- In `backend.py` wird zuerst `.venv/.env` und danach `.env` eingelesen.
+- Eine Variable wird nur gesetzt, wenn sie noch nicht in den Umgebungsvariablen existiert.
+- Dadurch hat `.venv/.env` Vorrang.
+
+## Zusatzprompt (User)
+lösche das was nicht benutzt wird
+
+## Zusatzausgabe (Assistant)
+Die ungenutzte Projekt-`.env` wurde entfernt, weil sie nur ein Duplikat der tatsächlich zuerst geladenen `.venv/.env` war.
+
+## Zusatzänderungen
+
+### 1) .env
+- Gelöscht, weil die Datei nur doppelte SMTP-Konfiguration enthalten hat.
+- Die aktive Konfiguration verbleibt in `.venv/.env`.
+
+## Zusatzvalidierung
+- Prüfung der Env-Dateien auf doppelte `LEARNHUB_SMTP_EMAIL`- und `LEARNHUB_SMTP_PASSWORD`-Einträge durchgeführt.
+- Abgleich der Lade-Reihenfolge in `backend.py` bestätigt: zuerst `.venv/.env`, dann `.env` als Fallback.

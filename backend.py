@@ -331,6 +331,18 @@ def init_db():
     )
     """)
 
+    # ADMIN MESSAGES
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS admin_messages (
+        id TEXT PRIMARY KEY,
+        sender_user_id TEXT,
+        recipient_user_id TEXT,
+        title TEXT,
+        body TEXT,
+        created_at TEXT
+    )
+    """)
+
     # Ensure there is at least one admin in existing databases.
     cursor.execute("SELECT COUNT(*) AS total FROM users WHERE lower(role)='admin'")
     admin_count = cursor.fetchone()["total"]
@@ -573,6 +585,12 @@ class CalendarExtraCreate(BaseModel):
     title: str
     date: str
     description: Optional[str] = ""
+
+
+class AdminMessageCreate(BaseModel):
+    title: str
+    body: str
+    recipient_user_id: Optional[str] = None
 
 
 class GradeCreate(BaseModel):
@@ -1175,6 +1193,7 @@ def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
     cursor.execute("DELETE FROM files WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM flashcard_decks WHERE user_id=?", (user_id,))
     cursor.execute("DELETE FROM email_verifications WHERE user_id=?", (user_id,))
+    cursor.execute("DELETE FROM admin_messages WHERE sender_user_id=? OR recipient_user_id=?", (user_id, user_id))
 
     cursor.execute("DELETE FROM users WHERE id=?", (user_id,))
     db.commit()
@@ -1188,6 +1207,156 @@ def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
         os.rmdir(user_dir)
 
     return {"message": "Account erfolgreich gelöscht"}
+
+
+# =========================================
+# ADMIN MESSAGE ROUTES
+# =========================================
+
+@app.get("/messages/{user_id}")
+def get_admin_messages(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            m.id,
+            m.title,
+            m.body,
+            m.created_at,
+            m.sender_user_id,
+            m.recipient_user_id,
+            COALESCE(sender.username, 'Admin') AS sender_username,
+            recipient.username AS recipient_username
+        FROM admin_messages m
+        LEFT JOIN users sender ON sender.id = m.sender_user_id
+        LEFT JOIN users recipient ON recipient.id = m.recipient_user_id
+        WHERE m.recipient_user_id IS NULL OR m.recipient_user_id = ?
+        ORDER BY m.created_at DESC
+        """,
+        (user_id,)
+    )
+
+    rows = cursor.fetchall()
+    db.close()
+    return [
+        {
+            **dict(row),
+            "is_broadcast": row["recipient_user_id"] is None
+        }
+        for row in rows
+    ]
+
+
+@app.get("/admin/messages/{requester_id}")
+def get_admin_message_management(requester_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    require_admin_user(cursor, requester_id)
+
+    cursor.execute(
+        """
+        SELECT
+            m.id,
+            m.title,
+            m.body,
+            m.created_at,
+            m.sender_user_id,
+            m.recipient_user_id,
+            COALESCE(sender.username, 'Admin') AS sender_username,
+            recipient.username AS recipient_username
+        FROM admin_messages m
+        LEFT JOIN users sender ON sender.id = m.sender_user_id
+        LEFT JOIN users recipient ON recipient.id = m.recipient_user_id
+        ORDER BY m.created_at DESC
+        """
+    )
+    messages = [
+        {
+            **dict(row),
+            "is_broadcast": row["recipient_user_id"] is None
+        }
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute(
+        """
+        SELECT id, username, role
+        FROM users
+        ORDER BY lower(username) ASC
+        """
+    )
+    users = [dict(row) for row in cursor.fetchall()]
+
+    db.close()
+    return {
+        "messages": messages,
+        "users": users
+    }
+
+
+@app.post("/admin/messages/{requester_id}")
+def create_admin_message(requester_id: str, payload: AdminMessageCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    require_admin_user(cursor, requester_id)
+
+    title = (payload.title or "").strip()
+    body = (payload.body or "").strip()
+    recipient_user_id = (payload.recipient_user_id or "").strip() or None
+
+    if not title:
+        raise HTTPException(status_code=400, detail="Titel fehlt")
+    if not body:
+        raise HTTPException(status_code=400, detail="Nachricht fehlt")
+
+    recipient_username = None
+    if recipient_user_id is not None:
+        cursor.execute("SELECT username FROM users WHERE id=?", (recipient_user_id,))
+        recipient_row = cursor.fetchone()
+        if not recipient_row:
+            raise HTTPException(status_code=404, detail="Empfänger nicht gefunden")
+        recipient_username = recipient_row["username"]
+
+    message_id = generate_id()
+    created_at = datetime.utcnow().isoformat()
+
+    cursor.execute(
+        """
+        INSERT INTO admin_messages (id, sender_user_id, recipient_user_id, title, body, created_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (message_id, requester_id, recipient_user_id, title, body, created_at)
+    )
+
+    db.commit()
+    db.close()
+    return {
+        "message": "Admin-Nachricht gespeichert",
+        "id": message_id,
+        "created_at": created_at,
+        "recipient_username": recipient_username,
+        "is_broadcast": recipient_user_id is None
+    }
+
+
+@app.delete("/admin/messages/{requester_id}/{message_id}")
+def delete_admin_message(requester_id: str, message_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    require_admin_user(cursor, requester_id)
+
+    cursor.execute("DELETE FROM admin_messages WHERE id=?", (message_id,))
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Nachricht nicht gefunden")
+
+    db.commit()
+    db.close()
+    return {"message": "Nachricht gelöscht"}
 
 
 # =========================================

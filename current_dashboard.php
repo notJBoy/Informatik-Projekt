@@ -799,6 +799,13 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             border-radius: 8px;
         }
 
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
         .message-title {
             font-weight: 600;
             margin-bottom: 0.25rem;
@@ -812,6 +819,31 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
         .message-text {
             font-size: 0.9rem;
+            white-space: pre-wrap;
+        }
+
+        .message-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            background-color: rgba(13, 110, 253, 0.12);
+            color: var(--color-primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .message-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .message-empty {
+            color: var(--color-text-muted);
+            text-align: center;
+            padding: 0.75rem;
         }
 
         /* Admin Panel Widget */
@@ -847,7 +879,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             margin-top: 1rem;
         }
 
-        input[type="text"], input[type="number"], select {
+        input[type="text"], input[type="number"], select, textarea {
             flex: 1;
             padding: 0.75rem;
             border: 1px solid var(--color-border);
@@ -857,9 +889,21 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             font-size: 0.9rem;
         }
 
-        input:focus, select:focus {
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--color-primary);
+        }
+
+        .form-status {
+            margin: 0;
+            min-height: 1.2rem;
+            font-size: 0.85rem;
         }
 
         .btn-primary {
@@ -1582,8 +1626,11 @@ themeToggle.addEventListener('click', () => {
             } else if (viewId === 'timetable') {
                 renderTimetableView();
                 renderHomework(false, 'homeworkGridTimetable');
+            } else if (viewId === 'admin-messages') {
+                loadAdminMessages();
             } else if (viewId === 'admin') {
                 loadAdminPanel();
+                loadAdminMessageManagement();
             } else if (viewId === 'flashcards') {
                 if (typeof fcShowDecksView === 'function') {
                     fcShowDecksView();
@@ -2748,6 +2795,8 @@ themeToggle.addEventListener('click', () => {
         // ===== ÜBERSICHT VORSCHAUEN =====
         const IS_ADMIN = <?php echo !empty($is_admin) ? 'true' : 'false'; ?>;
         let adminStatsCache = null;
+        let adminMessagesCache = [];
+        let adminMessageManagementCache = { messages: [], users: [] };
 
         function setAdminText(id, value) {
             const el = document.getElementById(id);
@@ -2766,6 +2815,171 @@ themeToggle.addEventListener('click', () => {
         function buildSimpleList(items, formatter, emptyText) {
             if (!Array.isArray(items) || !items.length) return `<p style="color:var(--color-text-muted);">${emptyText}</p>`;
             return items.map(formatter).join('');
+        }
+
+        function setAdminMessageStatus(message, type = 'info') {
+            const el = document.getElementById('adminMessageStatus');
+            if (!el) return;
+            el.textContent = message || '';
+
+            if (type === 'success') {
+                el.style.color = 'var(--color-success)';
+            } else if (type === 'error') {
+                el.style.color = 'var(--color-danger)';
+            } else {
+                el.style.color = 'var(--color-text-muted)';
+            }
+        }
+
+        function formatAdminMessageDate(value) {
+            if (!value) return '-';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value);
+            return date.toLocaleString('de-DE', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getAdminMessageRecipientLabel(message) {
+            if (!message || message.is_broadcast || !message.recipient_user_id) return 'Alle Nutzer';
+            return message.recipient_username || 'Einzelner Nutzer';
+        }
+
+        function buildAdminMessageMarkup(message, options = {}) {
+            const showDelete = Boolean(options.showDelete);
+            const showRecipient = Boolean(options.showRecipient);
+            const recipientLabel = getAdminMessageRecipientLabel(message);
+            const metaParts = [
+                `von ${escapeHtml(message.sender_username || 'Admin')}`,
+                escapeHtml(formatAdminMessageDate(message.created_at))
+            ];
+
+            if (showRecipient) {
+                metaParts.push(`an ${escapeHtml(recipientLabel)}`);
+            }
+
+            return `
+                <div class="message-item">
+                    <div class="message-header">
+                        <div>
+                            <div class="message-title">${escapeHtml(message.title || '')}</div>
+                            <div class="message-meta">${metaParts.join(' · ')}</div>
+                        </div>
+                        <div class="message-actions">
+                            <span class="message-badge">${escapeHtml(recipientLabel)}</span>
+                            ${showDelete ? `<button class="btn-secondary" style="padding:0.45rem 0.8rem;color:var(--color-danger);border-color:var(--color-danger);" onclick="deleteAdminMessage('${escapeHtml(message.id)}')">Löschen</button>` : ''}
+                        </div>
+                    </div>
+                    <div class="message-text">${escapeHtml(message.body || '')}</div>
+                </div>
+            `;
+        }
+
+        function renderAdminMessagesList(messages) {
+            const container = document.getElementById('adminMessagesList');
+            if (!container) return;
+
+            if (!Array.isArray(messages) || !messages.length) {
+                container.innerHTML = '<p class="message-empty">Keine Nachrichten vorhanden</p>';
+                renderOverviewMessages();
+                return;
+            }
+
+            container.innerHTML = messages.map(message => buildAdminMessageMarkup(message)).join('');
+            renderOverviewMessages();
+        }
+
+        function renderAdminSentMessages(messages) {
+            const container = document.getElementById('adminSentMessages');
+            if (!container) return;
+
+            if (!Array.isArray(messages) || !messages.length) {
+                container.innerHTML = '<p class="message-empty">Noch keine Nachrichten gesendet</p>';
+                return;
+            }
+
+            container.innerHTML = messages.map(message => buildAdminMessageMarkup(message, {
+                showDelete: true,
+                showRecipient: true
+            })).join('');
+        }
+
+        function populateAdminMessageRecipients(users) {
+            const select = document.getElementById('adminMessageRecipient');
+            if (!select) return;
+
+            const currentValue = select.value;
+            const options = ['<option value="">Alle Nutzer</option>'];
+
+            (Array.isArray(users) ? users : []).forEach(user => {
+                const roleSuffix = user.role && String(user.role).toLowerCase() === 'admin' ? ' (Admin)' : '';
+                options.push(`<option value="${escapeHtml(user.id)}">${escapeHtml(user.username || 'Unbekannt')}${roleSuffix}</option>`);
+            });
+
+            select.innerHTML = options.join('');
+            select.value = currentValue;
+            if (select.value !== currentValue) {
+                select.value = '';
+            }
+        }
+
+        async function loadAdminMessages() {
+            const container = document.getElementById('adminMessagesList');
+            if (container) {
+                container.innerHTML = '<p class="message-empty">Lädt…</p>';
+            }
+
+            try {
+                const res = await fetch('admin/messages_load.php');
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || 'Admin-Nachrichten konnten nicht geladen werden');
+                }
+
+                adminMessagesCache = Array.isArray(data) ? data : [];
+                renderAdminMessagesList(adminMessagesCache);
+            } catch (err) {
+                console.error('Admin-Nachrichten konnten nicht geladen werden', err);
+                if (container) {
+                    container.innerHTML = `<p class="message-empty">${escapeHtml(err.message || 'Admin-Nachrichten konnten nicht geladen werden')}</p>`;
+                }
+                renderOverviewMessages();
+            }
+        }
+
+        async function loadAdminMessageManagement() {
+            if (!IS_ADMIN) return;
+
+            const container = document.getElementById('adminSentMessages');
+            if (container) {
+                container.innerHTML = '<p class="message-empty">Lädt…</p>';
+            }
+
+            try {
+                const res = await fetch('admin/messages_manage.php');
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || 'Admin-Nachrichtenverwaltung konnte nicht geladen werden');
+                }
+
+                adminMessageManagementCache = {
+                    messages: Array.isArray(data.messages) ? data.messages : [],
+                    users: Array.isArray(data.users) ? data.users : []
+                };
+
+                populateAdminMessageRecipients(adminMessageManagementCache.users);
+                renderAdminSentMessages(adminMessageManagementCache.messages);
+            } catch (err) {
+                console.error('Admin-Nachrichtenverwaltung konnte nicht geladen werden', err);
+                if (container) {
+                    container.innerHTML = `<p class="message-empty">${escapeHtml(err.message || 'Admin-Nachrichtenverwaltung konnte nicht geladen werden')}</p>`;
+                }
+                setAdminMessageStatus(err.message || 'Admin-Nachrichtenverwaltung konnte nicht geladen werden', 'error');
+            }
         }
 
         function renderOverviewAdmin() {
@@ -2841,6 +3055,75 @@ themeToggle.addEventListener('click', () => {
                 renderOverviewAdmin();
             } catch {
                 setAdminText('adminContentSummary', 'Admin-Statistiken konnten nicht geladen werden');
+            }
+        }
+
+        async function sendAdminMessage() {
+            if (!IS_ADMIN) return;
+
+            const titleEl = document.getElementById('adminMessageTitle');
+            const recipientEl = document.getElementById('adminMessageRecipient');
+            const bodyEl = document.getElementById('adminMessageBody');
+
+            const title = titleEl ? titleEl.value.trim() : '';
+            const body = bodyEl ? bodyEl.value.trim() : '';
+            const recipient_user_id = recipientEl ? recipientEl.value : '';
+
+            if (!title) {
+                setAdminMessageStatus('Bitte einen Titel eingeben.', 'error');
+                return;
+            }
+
+            if (!body) {
+                setAdminMessageStatus('Bitte eine Nachricht eingeben.', 'error');
+                return;
+            }
+
+            setAdminMessageStatus('Nachricht wird gesendet…');
+
+            try {
+                const res = await fetch('admin/message_send.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        body,
+                        recipient_user_id: recipient_user_id || null
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || 'Admin-Nachricht konnte nicht gesendet werden');
+                }
+
+                if (titleEl) titleEl.value = '';
+                if (bodyEl) bodyEl.value = '';
+                if (recipientEl) recipientEl.value = '';
+
+                setAdminMessageStatus('Nachricht erfolgreich gesendet.', 'success');
+                await Promise.all([loadAdminMessages(), loadAdminMessageManagement()]);
+            } catch (err) {
+                console.error('Admin-Nachricht konnte nicht gesendet werden', err);
+                setAdminMessageStatus(err.message || 'Admin-Nachricht konnte nicht gesendet werden', 'error');
+            }
+        }
+
+        async function deleteAdminMessage(messageId) {
+            if (!IS_ADMIN || !messageId) return;
+            if (!window.confirm('Nachricht wirklich löschen?')) return;
+
+            try {
+                const res = await fetch(`admin/message_delete.php?message_id=${encodeURIComponent(messageId)}`);
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || 'Nachricht konnte nicht gelöscht werden');
+                }
+
+                setAdminMessageStatus('Nachricht gelöscht.', 'success');
+                await Promise.all([loadAdminMessages(), loadAdminMessageManagement()]);
+            } catch (err) {
+                console.error('Nachricht konnte nicht gelöscht werden', err);
+                setAdminMessageStatus(err.message || 'Nachricht konnte nicht gelöscht werden', 'error');
             }
         }
 
@@ -3163,7 +3446,9 @@ themeToggle.addEventListener('click', () => {
         loadCalendarExtras();
         loadGrades();
         loadTodos();
+        loadAdminMessages();
         if (IS_ADMIN) loadAdminPanel();
+        if (IS_ADMIN) loadAdminMessageManagement();
 
         const initialTabParam = new URLSearchParams(window.location.search).get('tab');
         const initialView = mapTabParamToView(initialTabParam);

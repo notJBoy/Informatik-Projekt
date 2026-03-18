@@ -61,5 +61,28 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">Admin-Nachricht schreiben</div>
+                                <button class="btn-primary" onclick="sendAdminMessage()">Senden</button>
+                            </div>
+                            <div class="input-group" style="flex-direction: column; gap: 0.75rem;">
+                                <input type="text" id="adminMessageTitle" placeholder="Titel der Nachricht">
+                                <select id="adminMessageRecipient">
+                                    <option value="">Alle Nutzer</option>
+                                </select>
+                                <textarea id="adminMessageBody" rows="6" placeholder="Nachricht eingeben"></textarea>
+                                <p id="adminMessageStatus" class="form-status"></p>
+                            </div>
+                        </div>
+                        <div class="widget">
+                            <div class="widget-header">
+                                <div class="widget-title">Gesendete Admin-Nachrichten</div>
+                                <button class="btn-primary" onclick="loadAdminMessageManagement()">Aktualisieren</button>
+                            </div>
+                            <div class="messages-list" id="adminSentMessages">
+                                <p class="message-empty">Noch keine Nachrichten gesendet</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
