@@ -1,0 +1,46 @@
+Datum: 18.03.2026
+Autor: Cem (Dokumentation durch Copilot)
+
+Chat-Dokumentation
+
+1. Thema und Ziel
+- Planung und Umsetzung eines funktionstuechtigen Admin-Panels fuer LearnHub.
+- Klare Rollenregel: Nur Admins duerfen das Admin-Panel sehen und nutzen.
+
+2. Besprochene KPI-Ideen
+- DAU/WAU/MAU (aktive Nutzer pro Tag/Woche/Monat)
+- Neue Registrierungen
+- To-Do-Erledigungsquote
+- Notenschnitt/Trend
+- Feature-Nutzung
+- Fehlgeschlagene Logins
+
+3. Rechtekonzept
+- Admin-only Zugriff auf Admin-Panel und Admin-Statistiken.
+- Normale Benutzer sollen Admin-Bereich weder sehen noch oeffnen koennen.
+
+4. Umgesetzte technische Aenderungen
+- Backend erweitert um Admin-Statistikdaten und Login-/Aktivitaets-Tracking.
+- Endpoint fuer Admin-Statistiken mit Admin-Pruefung.
+- Login-Rueckgabe um Rolle erweitert und Session-Rolle im PHP-Login gesetzt.
+- Dashboard/Navigation so angepasst, dass Admin-Tab nur fuer Admins sichtbar ist.
+- Admin-Ansicht von statischen Werten auf Live-Daten umgestellt.
+- PHP-Proxy fuer Admin-Stats angelegt.
+
+5. Aufgetretene Probleme
+- Backend-Startfehler: NameError bei hash_password in init_db (Reihenfolgeproblem).
+- Loesung: Hash in init_db direkt mit hashlib.sha256 berechnet.
+- Git-Push zunaechst abgelehnt (Remote war voraus).
+- Beim Rebase gab es Konflikte in current_dashboard.php.
+- Konflikte wurden aufgeloest und Rebase erfolgreich abgeschlossen.
+
+6. Ergebnis
+- Commit erfolgreich erstellt und auf main gepusht.
+- Admin-Panel ist angebunden und role-basiert geschuetzt.
+- Lokale DB-Aenderung (learnhub.db) blieb uncommitted lokal erhalten.
+
+7. Zusatzerklaerung aus dem Chat
+- DAU = Daily Active Users
+- WAU = Weekly Active Users
+- MAU = Monthly Active Users
+- jeweils eindeutige aktive Nutzer im Zeitraum.
