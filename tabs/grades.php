@@ -11,8 +11,7 @@
                         <div class="input-group">
                             <input type="text" id="gradeSubject" placeholder="Fach eingeben...">
                             <input type="number" id="gradeValue" placeholder="Punkte (0–15)" min="0" max="15" step="1">
-                            <input type="number" id="gradeWeight" placeholder="Gewichtung (z.B. 2)" min="1" step="1" value="1">
-                            <input type="text" id="gradeDescription" placeholder="s/m/p">
+                            <input type="number" id="gradeWeight" placeholder="Gewichtung (z.B. 1)" min="1" step="1" value="1">
                             <button class="btn-primary" onclick="addGrade()">Hinzufügen</button>
                         </div>
                         <div class="grades-list" id="gradesList" style="margin-top: 1.5rem;">
