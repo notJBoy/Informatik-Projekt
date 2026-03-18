@@ -144,6 +144,7 @@ def init_db():
         date TEXT,
         topic TEXT,
         period INTEGER,
+        grade REAL,
         created_at TEXT
     )
     """)
@@ -176,6 +177,12 @@ def init_db():
     # Add weight column if it doesn't exist yet (migration path for existing DBs)
     try:
         cursor.execute("ALTER TABLE grades ADD COLUMN weight REAL DEFAULT 1")
+    except Exception:
+        pass  # column already present
+
+    # Add grade column to exams if it doesn't exist yet (migration path for existing DBs)
+    try:
+        cursor.execute("ALTER TABLE exams ADD COLUMN grade REAL")
     except Exception:
         pass  # column already present
 
@@ -1388,6 +1395,31 @@ def delete_exam(user_id: str, exam_id: str):
 
     db.commit()
     return {"message": "Klassenarbeit gelöscht"}
+
+
+@app.put("/exams/{user_id}/{exam_id}/grade")
+def set_exam_grade(user_id: str, exam_id: str, grade_data: dict):
+    db = get_db()
+    cursor = db.cursor()
+
+    grade_value = grade_data.get("grade")
+    if grade_value is None or not isinstance(grade_value, (int, float)):
+        raise HTTPException(status_code=400, detail="Ungültige Noteneingabe")
+
+    cursor.execute(
+        """
+        UPDATE exams
+        SET grade=?
+        WHERE id=? AND user_id=?
+        """,
+        (grade_value, exam_id, user_id)
+    )
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Klassenarbeit nicht gefunden")
+
+    db.commit()
+    return {"message": "Note für Klassenarbeit gespeichert"}
 
 
 # =========================================

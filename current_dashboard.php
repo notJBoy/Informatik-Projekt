@@ -1450,6 +1450,37 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         </div>
     </div>
 
+    <!-- Exam Grade Modal -->
+    <div class="modal-overlay" id="examGradeModal">
+        <div class="modal-box">
+            <h2 id="examGradeTitle">📝 Note eintragen</h2>
+
+            <input type="hidden" id="examGradeExamId">
+            <div class="modal-section">
+                <h3>Fach</h3>
+                <input type="text" id="examGradeSubject" placeholder="" readonly style="background:var(--color-bg-hover);cursor:default;">
+            </div>
+            <div class="modal-section">
+                <h3>Punkte (0–15)</h3>
+                <input type="number" id="examGradeValue" placeholder="Punkte eingeben..." min="0" max="15" step="1">
+            </div>
+            <div class="modal-section">
+                <h3>Gewichtung</h3>
+                <input type="number" id="examGradeWeight" placeholder="z.B. 1,5" min="0.5" step="0.5" value="1">
+            </div>
+            <div class="modal-section">
+                <h3>Beschreibung (optional)</h3>
+                <input type="text" id="examGradeDescription" placeholder="z.B. Klassenarbeit Datum...">
+            </div>
+            <div class="modal-section">
+                <div>
+                    <button class="modal-btn modal-btn-primary" onclick="setExamGrade()">Speichern</button>
+                    <button class="modal-btn modal-btn-close" onclick="closeExamGradeModal()">Abbrechen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Theme Toggle
         // Theme Toggle (mit localStorage)
@@ -2470,6 +2501,86 @@ themeToggle.addEventListener('click', () => {
             }
         }
 
+        function openExamGradeModal(examId, subject) {
+            const modal = document.getElementById('examGradeModal');
+            const examIdInput = document.getElementById('examGradeExamId');
+            const subjectInput = document.getElementById('examGradeSubject');
+            const valueInput = document.getElementById('examGradeValue');
+            const weightInput = document.getElementById('examGradeWeight');
+            const descInput = document.getElementById('examGradeDescription');
+            const titleEl = document.getElementById('examGradeTitle');
+            
+            if (!modal || !examIdInput || !subjectInput || !valueInput) return;
+            
+            examIdInput.value = examId;
+            subjectInput.value = subject;
+            valueInput.value = '';
+            weightInput.value = '1';
+            if (descInput) descInput.value = '';
+            titleEl.textContent = `Note eintragen: ${subject}`;
+            
+            // Find existing grade if any
+            const exam = exams.find(e => e.id === examId);
+            if (exam && exam.grade !== null && exam.grade !== undefined) {
+                valueInput.value = exam.grade;
+            }
+            
+            modal.classList.add('open');
+            valueInput.focus();
+        }
+
+        function closeExamGradeModal() {
+            const modal = document.getElementById('examGradeModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        async function setExamGrade() {
+            const examIdInput = document.getElementById('examGradeExamId');
+            const subjectInput = document.getElementById('examGradeSubject');
+            const valueInput = document.getElementById('examGradeValue');
+            const weightInput = document.getElementById('examGradeWeight');
+            const descInput = document.getElementById('examGradeDescription');
+            
+            if (!examIdInput.value || !subjectInput.value || !valueInput.value) {
+                alert('Bitte Fach und Punkte ausfüllen');
+                return;
+            }
+
+            const value = parseFloat(valueInput.value);
+            const weight = parseFloat(weightInput.value);
+            if (isNaN(value) || value < 0 || value > 15) {
+                alert('Punkte müssen zwischen 0 und 15 liegen');
+                return;
+            }
+            if (isNaN(weight) || weight <= 0) {
+                alert('Gewichtung muss > 0 sein');
+                return;
+            }
+
+            try {
+                const res = await fetch('exams/exam_grade_set.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        exam_id: examIdInput.value,
+                        subject: subjectInput.value.trim(),
+                        value: value,
+                        weight: weight,
+                        description: descInput ? descInput.value.trim() : ''
+                    })
+                });
+                if (!res.ok) throw new Error();
+
+                closeExamGradeModal();
+                await loadExamsData();
+                // Reload grades tab to show new grade
+                if (typeof loadGrades === 'function') loadGrades();
+            } catch (err) {
+                console.error('Note konnte nicht gespeichert werden', err);
+                alert('Fehler beim Speichern der Note');
+            }
+        }
+
         function renderExams() {
             const list = document.getElementById('examsList');
             if (!list) return;
@@ -2488,9 +2599,15 @@ themeToggle.addEventListener('click', () => {
                 const isPast  = d < today;
                 const period  = exam.period ? ` · ${exam.period}. Stunde` : '';
                 const topic   = exam.topic  ? ` · ${escapeHtml(exam.topic)}` : '';
+                const gradeDisplay = exam.grade !== null && exam.grade !== undefined 
+                    ? `<span style="font-size:0.9rem;color:var(--color-success);font-weight:600;">${exam.grade}</span>`
+                    : '';
                 const badge   = isPast
                     ? '<span style="font-size:0.8rem;color:var(--color-text-muted);">vergangen</span>'
                     : '<span style="font-size:0.8rem;color:var(--color-warning);">⏳ bald</span>';
+                const gradeButton = isPast
+                    ? `<button class="btn-icon" onclick="openExamGradeModal('${escapeHtml(exam.id)}', '${escapeHtml(exam.subject)}')" title="Note eintragen">📝</button>`
+                    : '';
 
                 return `<div class="grade-item ${isPast ? 'exam-past' : ''}">
                     <div>
@@ -2498,7 +2615,9 @@ themeToggle.addEventListener('click', () => {
                         <div style="font-size:0.8rem;color:var(--color-text-muted);">${dateStr}${period}${topic}</div>
                     </div>
                     <div style="display:flex;align-items:center;gap:0.5rem;">
+                        ${gradeDisplay}
                         ${badge}
+                        ${gradeButton}
                         <button class="btn-icon" onclick="deleteExam('${escapeHtml(exam.id)}')" title="Löschen">🗑️</button>
                     </div>
                 </div>`;
