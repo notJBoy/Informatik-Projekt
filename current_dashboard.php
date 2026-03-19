@@ -3491,17 +3491,45 @@ themeToggle.addEventListener('click', () => {
         }
 
         function getOverviewDropTarget(grid, clientX, clientY) {
-            const hovered = document.elementFromPoint(clientX, clientY);
-            if (!hovered) return null;
+            const widgets = Array.from(grid.querySelectorAll('.widget[data-widget-id]'));
+            if (widgets.length === 0) return null;
 
-            const target = hovered.closest('.widget[data-widget-id]');
-            if (!target || target === draggingOverviewWidget || target.parentElement !== grid) {
-                return null;
-            }
+            let closestWidget = null;
+            let closestDistance = Infinity;
 
-            const rect = target.getBoundingClientRect();
-            const insertAfter = clientY > rect.top + rect.height / 2;
-            return { target, insertAfter };
+            // Finde das dem Cursor am nächsten liegende Widget
+            widgets.forEach(widget => {
+                if (widget === draggingOverviewWidget) return;
+
+                const rect = widget.getBoundingClientRect();
+                
+                // Berechne die Distanz von Cursor zu Widget-Grenzen (nicht Zentrum)
+                const distX = Math.max(0, rect.left - clientX, clientX - rect.right);
+                const distY = Math.max(0, rect.top - clientY, clientY - rect.bottom);
+                const distance = Math.sqrt(distX * distX + distY * distY);
+
+                if (distance < closestDistance) {
+                    closestDistance = distance;
+                    closestWidget = widget;
+                }
+            });
+
+            if (!closestWidget) return null;
+
+            const rect = closestWidget.getBoundingClientRect();
+            
+            // Bestimme insert-Position basierend auf Cursor-Position relativ zum Widget
+            // Nutze beide Achsen zur besseren Entscheidung
+            const relX = clientX - rect.left;
+            const relY = clientY - rect.top;
+            const widgetWidth = rect.width;
+            const widgetHeight = rect.height;
+            
+            // Bei Grid-Layouts: Priorisiere die Horizontal-Position
+            // Wenn der Cursor näher am rechten Rand liegt, füge nach dem Widget ein
+            const insertAfter = relX > widgetWidth * 0.55;
+
+            return { target: closestWidget, insertAfter };
         }
 
         function clearOverviewDropIndicator() {
@@ -3602,11 +3630,22 @@ themeToggle.addEventListener('click', () => {
                 event.preventDefault();
 
                 if (overviewDropTarget && overviewDropTarget.target) {
-                    if (overviewDropTarget.insertAfter) {
-                        grid.insertBefore(draggingOverviewWidget, overviewDropTarget.target.nextSibling);
+                    const targetWidget = overviewDropTarget.target;
+                    
+                    // Stelle sicher, dass das Ziel-Widget noch im Grid ist
+                    if (!grid.contains(targetWidget)) {
+                        grid.appendChild(draggingOverviewWidget);
+                    } else if (overviewDropTarget.insertAfter) {
+                        // Füge nach dem Ziel-Widget ein (oder am Ende, wenn kein nächstes Widget)
+                        const nextSibling = targetWidget.nextSibling;
+                        grid.insertBefore(draggingOverviewWidget, nextSibling);
                     } else {
-                        grid.insertBefore(draggingOverviewWidget, overviewDropTarget.target);
+                        // Füge vor dem Ziel-Widget ein
+                        grid.insertBefore(draggingOverviewWidget, targetWidget);
                     }
+                } else {
+                    // Fallback: ans Ende hinzufügen
+                    grid.appendChild(draggingOverviewWidget);
                 }
 
                 saveOverviewWidgetOrder();
