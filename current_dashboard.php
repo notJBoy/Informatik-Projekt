@@ -390,25 +390,9 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             position: relative;
         }
 
-        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-before::before,
-        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-after::after {
-            content: '';
-            position: absolute;
-            left: 8px;
-            right: 8px;
-            height: 2px;
-            background-color: #1f6fff;
-            border-radius: 2px;
-            pointer-events: none;
-            z-index: 4;
-        }
-
-        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-before::before {
-            top: -8px;
-        }
-
-        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-after::after {
-            bottom: -8px;
+        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-swap-target {
+            border: 2px solid #1f6fff;
+            box-shadow: 0 0 8px rgba(31, 111, 255, 0.3);
         }
 
         .widget-header {
@@ -3491,53 +3475,25 @@ themeToggle.addEventListener('click', () => {
         }
 
         function getOverviewDropTarget(grid, clientX, clientY) {
-            const widgets = Array.from(grid.querySelectorAll('.widget[data-widget-id]'));
-            if (widgets.length === 0) return null;
+            const hovered = document.elementFromPoint(clientX, clientY);
+            if (!hovered) return null;
 
-            let closestWidget = null;
-            let closestDistance = Infinity;
+            const target = hovered.closest('.widget[data-widget-id]');
+            if (!target || target === draggingOverviewWidget || target.parentElement !== grid) {
+                return null;
+            }
 
-            // Finde das dem Cursor am nächsten liegende Widget
-            widgets.forEach(widget => {
-                if (widget === draggingOverviewWidget) return;
-
-                const rect = widget.getBoundingClientRect();
-                
-                // Berechne die Distanz von Cursor zu Widget-Grenzen (nicht Zentrum)
-                const distX = Math.max(0, rect.left - clientX, clientX - rect.right);
-                const distY = Math.max(0, rect.top - clientY, clientY - rect.bottom);
-                const distance = Math.sqrt(distX * distX + distY * distY);
-
-                if (distance < closestDistance) {
-                    closestDistance = distance;
-                    closestWidget = widget;
-                }
-            });
-
-            if (!closestWidget) return null;
-
-            const rect = closestWidget.getBoundingClientRect();
-            
-            // Bestimme insert-Position basierend auf Cursor-Position relativ zum Widget
-            // Nutze beide Achsen zur besseren Entscheidung
-            const relX = clientX - rect.left;
-            const relY = clientY - rect.top;
-            const widgetWidth = rect.width;
-            const widgetHeight = rect.height;
-            
-            // Bei Grid-Layouts: Priorisiere die Horizontal-Position
-            // Wenn der Cursor näher am rechten Rand liegt, füge nach dem Widget ein
-            const insertAfter = relX > widgetWidth * 0.55;
-
-            return { target: closestWidget, insertAfter };
+            const rect = target.getBoundingClientRect();
+            const insertAfter = clientY > rect.top + rect.height / 2;
+            return { target, insertAfter };
         }
 
         function clearOverviewDropIndicator() {
             const grid = document.getElementById('overviewWidgetGrid');
             if (!grid) return;
 
-            grid.querySelectorAll('.widget[data-widget-id].drop-before, .widget[data-widget-id].drop-after').forEach(widget => {
-                widget.classList.remove('drop-before', 'drop-after');
+            grid.querySelectorAll('.widget[data-widget-id].drop-swap-target').forEach(widget => {
+                widget.classList.remove('drop-swap-target');
             });
         }
 
@@ -3545,7 +3501,7 @@ themeToggle.addEventListener('click', () => {
             clearOverviewDropIndicator();
             if (!dropTarget || !dropTarget.target) return;
 
-            dropTarget.target.classList.add(dropTarget.insertAfter ? 'drop-after' : 'drop-before');
+            dropTarget.target.classList.add('drop-swap-target');
         }
 
         function updateOverviewCustomizeButton() {
@@ -3632,20 +3588,15 @@ themeToggle.addEventListener('click', () => {
                 if (overviewDropTarget && overviewDropTarget.target) {
                     const targetWidget = overviewDropTarget.target;
                     
-                    // Stelle sicher, dass das Ziel-Widget noch im Grid ist
-                    if (!grid.contains(targetWidget)) {
-                        grid.appendChild(draggingOverviewWidget);
-                    } else if (overviewDropTarget.insertAfter) {
-                        // Füge nach dem Ziel-Widget ein (oder am Ende, wenn kein nächstes Widget)
-                        const nextSibling = targetWidget.nextSibling;
-                        grid.insertBefore(draggingOverviewWidget, nextSibling);
-                    } else {
-                        // Füge vor dem Ziel-Widget ein
-                        grid.insertBefore(draggingOverviewWidget, targetWidget);
-                    }
-                } else {
-                    // Fallback: ans Ende hinzufügen
-                    grid.appendChild(draggingOverviewWidget);
+                    // Tausche die beiden Widgets
+                    if (targetWidget === draggingOverviewWidget) return;
+                    
+                    // Erstelle einen temp-Knoten als Platzhalter
+                    const tempNode = document.createTextNode('');
+                    grid.insertBefore(tempNode, draggingOverviewWidget);
+                    grid.insertBefore(draggingOverviewWidget, targetWidget);
+                    grid.insertBefore(targetWidget, tempNode);
+                    tempNode.parentNode.removeChild(tempNode);
                 }
 
                 saveOverviewWidgetOrder();
