@@ -343,6 +343,17 @@ def init_db():
     )
     """)
 
+    # SUBJECTS (Fächer)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS subjects (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        name TEXT,
+        color TEXT,
+        created_at TEXT
+    )
+    """)
+
     # Ensure there is at least one admin in existing databases.
     cursor.execute("SELECT COUNT(*) AS total FROM users WHERE lower(role)='admin'")
     admin_count = cursor.fetchone()["total"]
@@ -598,6 +609,11 @@ class GradeCreate(BaseModel):
     value: float
     weight: float = 1.0
     description: Optional[str] = ""
+
+
+class SubjectCreate(BaseModel):
+    name: str
+    color: str
 
     
 class FlashcardCreate(BaseModel):
@@ -1705,6 +1721,55 @@ def delete_grade(user_id: str, grade_id: str):
 
     db.commit()
     return {"message": "Note gelöscht"}
+
+
+# =========================================
+# SUBJECTS ROUTES (Fächer)
+# =========================================
+
+@app.post("/subjects/{user_id}")
+def add_subject(user_id: str, subject: SubjectCreate):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    INSERT INTO subjects VALUES (?, ?, ?, ?, ?)
+    """, (
+        generate_id(),
+        user_id,
+        subject.name,
+        subject.color,
+        datetime.utcnow().isoformat()
+    ))
+
+    db.commit()
+    return {"message": "Fach gespeichert"}
+
+
+@app.get("/subjects/{user_id}")
+def get_subjects(user_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("SELECT * FROM subjects WHERE user_id=?", (user_id,))
+    return cursor.fetchall()
+
+
+@app.delete("/subjects/{user_id}/{subject_id}")
+def delete_subject(user_id: str, subject_id: str):
+    db = get_db()
+    cursor = db.cursor()
+
+    cursor.execute("""
+    DELETE FROM subjects
+    WHERE id=? AND user_id=?
+    """, (subject_id, user_id))
+
+    if cursor.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Fach nicht gefunden")
+
+    db.commit()
+    return {"message": "Fach gelöscht"}
 
 
 # =========================================

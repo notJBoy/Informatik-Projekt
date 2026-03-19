@@ -1353,6 +1353,10 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
                 <div class="nav-section">
                     <div class="nav-section-title">Module</div>
+                    <a class="nav-item" data-view="subjects">
+                        <span class="nav-icon">📚</span>
+                        <span>Fächer</span>
+                    </a>
                     <a class="nav-item" data-view="timetable">
                         <span class="nav-icon">📅</span>
                         <span>Stundenplan</span>
@@ -1418,6 +1422,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         <main class="main-content">
             <div id="contentArea">
                 <?php include __DIR__ . '/tabs/overview.php'; ?>
+                <?php include __DIR__ . '/tabs/subjects.php'; ?>
                 <?php include __DIR__ . '/tabs/timetable.php'; ?>
                 <?php include __DIR__ . '/tabs/grades.php'; ?>
                 <?php include __DIR__ . '/tabs/todos.php'; ?>
@@ -1569,6 +1574,9 @@ themeToggle.addEventListener('click', () => {
                 overview: 'overview',
                 ueberblick: 'overview',
                 'uberblick': 'overview',
+                subjects: 'subjects',
+                fächer: 'subjects',
+                facher: 'subjects',
                 timetable: 'timetable',
                 stundenplan: 'timetable',
                 grades: 'grades',
@@ -1597,6 +1605,7 @@ themeToggle.addEventListener('click', () => {
         function mapViewToTabParam(viewId) {
             const viewMap = {
                 overview: 'overview',
+                subjects: 'subjects',
                 timetable: 'stundenplan',
                 grades: 'grades',
                 todos: 'todos',
@@ -1621,6 +1630,8 @@ themeToggle.addEventListener('click', () => {
         function refreshViewState(viewId) {
             if (viewId === 'overview') {
                 renderOverview();
+            } else if (viewId === 'subjects') {
+                loadSubjects();
             } else if (viewId === 'calendar') {
                 renderCalendar();
             } else if (viewId === 'timetable') {
@@ -2327,14 +2338,18 @@ themeToggle.addEventListener('click', () => {
                     const subject = cell.subject || '';
                     const room    = cell.room    || '';
                     html += `<td><div class="tt-editor-cell">
-                        <input type="text" id="tt_${day}_${p}_subject" value="${escapeHtml(subject)}" placeholder="Fach">
-                        <input type="text" id="tt_${day}_${p}_room"    value="${escapeHtml(room)}"    placeholder="Raum">
+                        <select id="tt_${day}_${p}_subject" data-subject-dropdown style="width: 100%; margin-bottom: 0.25rem;">
+                            <option value="${escapeHtml(subject)}">${escapeHtml(subject) || '-- Fach wählen --'}</option>
+                        </select>
+                        <input type="text" id="tt_${day}_${p}_room"    value="${escapeHtml(room)}"    placeholder="Raum" style="width: 100%;">
                     </div></td>`;
                 });
                 html += '</tr>';
             }
             html += '</tbody></table>';
             editor.innerHTML = html;
+            // Dropdowns mit Fächern füllen
+            setTimeout(() => populateSubjectDropdowns(), 100);
         }
 
         function toggleTimetableEdit() {
@@ -3444,6 +3459,7 @@ themeToggle.addEventListener('click', () => {
         loadHomeworkData();
         loadExamsData();
         loadCalendarExtras();
+        loadSubjects();
         loadGrades();
         loadTodos();
         loadAdminMessages();
@@ -3639,6 +3655,7 @@ themeToggle.addEventListener('click', () => {
                     return;
                 }
                 const grades = await res.json();
+                gradesData = grades; // Global speichern für Dropdown-Statistiken
                 if (!grades.length) {
                     list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Noch keine Noten eingetragen</p>';
                     return;
@@ -3732,6 +3749,192 @@ themeToggle.addEventListener('click', () => {
                     if (el) el.remove();
                 }
             } catch { /* Server nicht erreichbar */ }
+        }
+
+        // ========================================
+        // SUBJECTS (FÄCHER)
+        // ========================================
+
+        let subjectsData = null;
+        let gradesData = null;
+
+        async function loadSubjects() {
+            const list = document.getElementById('subjectsList');
+            if (!list) return;
+            try {
+                const res = await fetch('subjects/subjects_load.php');
+                if (!res.ok) {
+                    console.error('Fehler beim Laden der Fächer, Status', res.status);
+                    list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Fehler beim Laden der Fächer</p>';
+                    return;
+                }
+                subjectsData = await res.json();
+                populateSubjectDropdowns();
+
+                // Load grades data for statistics if not available
+                if (!gradesData) {
+                    try {
+                        const gradesRes = await fetch('grades/grades_load.php');
+                        if (gradesRes.ok) {
+                            const grades = await gradesRes.json();
+                            gradesData = grades;
+                        }
+                    } catch (err) {
+                        console.warn('Fehler beim Laden der Noten für Statistiken', err);
+                    }
+                }
+
+                if (!subjectsData.length) {
+                    list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Noch keine Fächer erstellt</p>';
+                    return;
+                }
+
+                // Calculate statistics per subject
+                const subjectStats = {};
+                if (gradesData) {
+                    gradesData.forEach(g => {
+                        if (!subjectStats[g.subject]) {
+                            subjectStats[g.subject] = { total: 0, count: 0, grades: [] };
+                        }
+                        const weight = (!g.weight || Number(g.weight) <= 0) ? 1 : Number(g.weight);
+                        subjectStats[g.subject].total += Number(g.value) * weight;
+                        subjectStats[g.subject].count += weight;
+                        subjectStats[g.subject].grades.push(g.value);
+                    });
+                }
+
+                list.innerHTML = subjectsData.map(s => {
+                    const stats = subjectStats[s.name];
+                    let statsHtml = '';
+                    if (stats && stats.count > 0) {
+                        const avg = (stats.total / stats.count).toFixed(1);
+                        const gradeCount = stats.grades.length;
+                        statsHtml = `<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:0.25rem;">Ø ${avg}P aus ${gradeCount} Note${gradeCount !== 1 ? 'n' : ''}</div>`;
+                    }
+                    return `
+                    <div class="grade-item" id="subject-${s.id}" style="border-left: 4px solid ${escapeHtml(s.color)};">
+                        <div>
+                            <span class="grade-subject">${escapeHtml(s.name)}</span>
+                            <div style="font-size:0.8rem;color:var(--color-text-muted);">Farbe: ${escapeHtml(s.color)}</div>
+                            ${statsHtml}
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <button class="btn-icon" onclick="removeSubject('${s.id}')" title="Löschen">🗑️</button>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+            } catch (err) {
+                console.error('Netzwerkfehler beim Laden der Fächer', err);
+                list.innerHTML = '<p style="color:red;text-align:center;padding:1rem;">Server nicht erreichbar</p>';
+            }
+        }
+
+        async function addSubject() {
+            const nameInput  = document.getElementById('subjectName');
+            const colorInput = document.getElementById('subjectColor');
+            if (!nameInput.value.trim()) return;
+            try {
+                const res = await fetch('subjects/subject_add.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        name: nameInput.value.trim(),
+                        color: colorInput.value
+                    })
+                });
+                if (res.ok) {
+                    nameInput.value = '';
+                    colorInput.value = '#0d6efd';
+                    loadSubjects();
+                    // Update subject dropdowns in other tabs
+                    populateSubjectDropdowns();
+                } else {
+                    console.error('Fehler beim Speichern des Fachs, Status', res.status);
+                    alert('Fach konnte nicht gespeichert werden. Sieh in die Konsole.');
+                }
+            } catch (err) {
+                console.error('Netzwerkfehler beim Speichern des Fachs', err);
+                alert('Server nicht erreichbar – bitte Backend starten oder CORS prüfen.');
+            }
+        }
+
+        async function removeSubject(subjectId) {
+            if (!confirm('Fach wirklich löschen?')) return;
+            try {
+                const res = await fetch('subjects/subject_delete.php', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({id: subjectId})
+                });
+                if (res.ok) {
+                    const el = document.getElementById(`subject-${subjectId}`);
+                    if (el) el.remove();
+                    loadSubjects();
+                    // Update dropdowns
+                    populateSubjectDropdowns();
+                }
+            } catch (err) {
+                console.error('Fehler beim Löschen des Fachs', err);
+            }
+        }
+
+        // Update all subject dropdowns
+        async function populateSubjectDropdowns() {
+            // Load subjects data if not available
+            if (!subjectsData) {
+                try {
+                    const res = await fetch('subjects/subjects_load.php');
+                    if (res.ok) {
+                        subjectsData = await res.json();
+                    } else {
+                        console.error('Fehler beim Laden der Fächer für Dropdowns');
+                        return;
+                    }
+                } catch (err) {
+                    console.error('Fehler beim Laden der Fächer für Dropdowns', err);
+                    return;
+                }
+            }
+
+            // Load grades data if not available (for statistics)
+            if (!gradesData) {
+                try {
+                    const res = await fetch('grades/grades_load.php');
+                    if (res.ok) {
+                        const grades = await res.json();
+                        gradesData = grades; // Store globally
+                    } else {
+                        console.warn('Noten konnten nicht geladen werden für Statistiken');
+                    }
+                } catch (err) {
+                    console.warn('Fehler beim Laden der Noten für Statistiken', err);
+                }
+            }
+
+            const dropdowns = document.querySelectorAll('[data-subject-dropdown]');
+            dropdowns.forEach(dd => {
+                const current = dd.value;
+                // Berechne Durchschnitt pro Fach
+                const subjectStats = {};
+                if (gradesData) {
+                    gradesData.forEach(g => {
+                        if (!subjectStats[g.subject]) {
+                            subjectStats[g.subject] = { total: 0, count: 0, grades: [] };
+                        }
+                        const weight = (!g.weight || Number(g.weight) <= 0) ? 1 : Number(g.weight);
+                        subjectStats[g.subject].total += Number(g.value) * weight;
+                        subjectStats[g.subject].count += weight;
+                        subjectStats[g.subject].grades.push(g.value);
+                    });
+                }
+
+                dd.innerHTML = '<option value="">-- Fach wählen --</option>' +
+                    subjectsData.map(s => {
+                        return `<option value="${escapeHtml(s.name)}" style="background-color: ${escapeHtml(s.color)}20; color: inherit;">${escapeHtml(s.name)}</option>`;
+                    }).join('');
+                if (current) dd.value = current;
+            });
         }
     </script>
 </body>

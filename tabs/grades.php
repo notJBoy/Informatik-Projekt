@@ -9,7 +9,9 @@
                             <div class="widget-title">Note hinzufügen</div>
                         </div>
                         <div class="input-group">
-                            <input type="text" id="gradeSubject" placeholder="Fach eingeben...">
+                            <select id="gradeSubject" data-subject-dropdown placeholder="Fach wählen...">
+                                <option value="">-- Fach wählen --</option>
+                            </select>
                             <input type="number" id="gradeValue" placeholder="Punkte (0–15)" min="0" max="15" step="1">
                             <input type="number" id="gradeWeight" placeholder="Gewichtung (z.B. 1)" min="1" step="1" value="1">
                             <button class="btn-primary" onclick="addGrade()">Hinzufügen</button>

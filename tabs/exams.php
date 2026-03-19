@@ -9,7 +9,9 @@
                             <div class="widget-title">Neue Klassenarbeit hinzufügen</div>
                         </div>
                         <div class="input-group">
-                            <input type="text" id="examSubject" placeholder="Fach...">
+                            <select id="examSubject" data-subject-dropdown>
+                                <option value="">-- Fach wählen --</option>
+                            </select>
                             <input type="date" id="examDate">
                             <input type="text" id="examTopic" placeholder="Thema...">
                             <select id="examPeriod">

@@ -12,7 +12,9 @@
                         </div>
                         <div class="input-group" style="flex-wrap: wrap; gap: 0.5rem;">
                             <input type="text" id="todoTitle" placeholder="Aufgabe eingeben..." style="flex: 2 1 180px;">
-                            <input type="text" id="todoSubject" placeholder="Fach (optional)" style="flex: 1 1 130px;">
+                            <select id="todoSubject" data-subject-dropdown style="flex: 1 1 130px;">
+                                <option value="">-- Fach (optional) --</option>
+                            </select>
                             <input type="date" id="todoDueDate" style="flex: 1 1 140px;">
                             <select id="todoPriority" style="flex: 1 1 120px;">
                                 <option value="low">🟢 Niedrig</option>
