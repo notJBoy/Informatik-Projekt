@@ -62,3 +62,25 @@ Kurze Zusammenfassung:
 - Das Dashboard hat jetzt einen echten Bearbeitungsmodus fuer die Widget-Reihenfolge.
 - Die Interaktion fuehlt sich fluessiger an, weil die Verschiebung erst beim Loslassen erfolgt.
 - Eine duenne blaue Linie zeigt klar, wo das Widget einsortiert wird.
+
+---
+
+8. Chat-Verlauf: Widget-Swap statt Insert (19.03.2026)
+
+Prompts (User):
+1) "bei der verschiebung werden die widget teilweise falsch verschoben."
+2) "kannst du bitte die widgets vertauschen stadt alle anderen mit zu verschieben"
+3) "dokumetiere es erneut und pushe alles"
+
+Antworten und umgesetzte Schritte (Assistent):
+- Problem identifiziert: Die insertBefore-Logik verschob alle nachfolgenden Widgets, nicht intuititv.
+- Lösung implementiert: Widget-Reordering von Insert-Operation zu Swap-Operation geändert.
+- Bei Drop werden jetzt nur die zwei Widgets (gezogenes + Ziel) ihre Positionen getauscht.
+- Alle anderen Widgets bleiben an ihrer Position.
+- Visualisierung angepasst: statt Einfüge-Linien jetzt blaues Highlight (Border + Glow) des Ziel-Widgets.
+- Commit 27814af: "Change widget reordering to swap instead of insert"
+
+Kurze Zusammenfassung:
+- Widget-Vertauschung ist deutlich intuitiver: nur 2 Widgets tauschen, alle anderen bleiben stabil.
+- Visuelle Feedback (Highlight statt Linien) macht die Tausch-Aktion klarer.
+- Benutzer können Widgets jetzt präzise ohne Nebenwirkungen umsortieren.
