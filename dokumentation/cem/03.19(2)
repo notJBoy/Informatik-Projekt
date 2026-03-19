@@ -1,0 +1,87 @@
+Datum: 19.03.2026
+Projekt: Kalender-Anpassungen im Dashboard
+Dateien: current_dashboard.php, tabs/calendar.php
+
+Chat-Dokumentation (Prompts und Antworten)
+
+1) Prompt
+"kannst du den kalender folgendermassen veraendern: er soll kleiner sein, der aktuelle tag soll markiert sein und rechts davon sollen die ereignisse des tages stehen"
+
+Antwort / Umsetzung
+- Kalenderlayout auf 2 Spalten umgebaut (links Monat, rechts Tagesereignisse).
+- Kalenderzellen kompakter gemacht.
+- Markierung fuer heutigen Tag und ausgewaehlten Tag eingebaut.
+- Tagesereignisse rechts fix angezeigt.
+
+2) Prompt
+"links soll der montag sein rechts der sonntag der ausgewaehlte tag soll auch anzeigt werden"
+
+Antwort / Umsetzung
+- Wochenstart auf Montag umgestellt, Sonntag nach rechts.
+- Anzeige des ausgewaehlten Tages als Text ergaenzt.
+
+3) Prompt
+"es soll nicht durch die graue schrift sondern durch markierung des feldes visualisiert werden"
+
+Antwort / Umsetzung
+- Text-Hinweis entfernt.
+- Ausgewaehltes Feld deutlich visuell markiert.
+
+4) Prompt
+"mach das letzte rueckgaengig"
+
+Antwort / Umsetzung
+- Letzte Aenderung zur Feldmarkierung zurueckgenommen.
+- Vorherigen Zustand (Hinweistext + mildere Feldmarkierung) wiederhergestellt.
+
+5) Prompt
+"markiere das feld dunkel grau statt weiss was gerade ausgewaehlt ist"
+
+Antwort / Umsetzung
+- Feld des ausgewaehlten Tages auf dunkelgrau gesetzt.
+- Kontrast fuer Tageszahl angepasst.
+
+6) Prompt
+"markiere auf die selbe weise den aktuellen tag#"
+
+Antwort / Umsetzung
+- Heutiger Tag visuell wie der ausgewaehlte Tag gestaltet.
+
+7) Prompt
+"nicht dieselbe farbe"
+
+Antwort / Umsetzung
+- Farben getrennt:
+  - aktueller Tag dunkler
+  - ausgewaehlter Tag heller
+
+8) Prompt
+"der aktuelle tag soll den ausgewaehlten ueberlappen"
+
+Antwort / Umsetzung
+- CSS-Prioritaet gesetzt, sodass bei Doppeltreffer (heute + ausgewaehlt) der aktuelle Tag visuell dominiert.
+
+9) Prompt
+"die blauen punkte unten rechts stehen fuer ereignisse beim aktuellen tag soll es weiss markiert sein sonst so wie jetzt, also blau."
+
+Antwort / Umsetzung
+- Event-Punkt standardmaessig blau belassen.
+- Auf dem aktuellen Tag Event-Punkt weiss gesetzt.
+
+10) Prompt
+"bei der monatsuebersicht im widget soll oben rechts ein button namens 'ereignis hinzufuegen' stehen. wenn man darauf klickt soll in der mitte ein feld aufploppen wo man den titel und optional beschreibung angeben kann. es soll dann zum ausgewaehlten tag hinzugefuegt werden"
+
+Antwort / Umsetzung
+- Button "Ereignis hinzufuegen" im Widget-Header ergaenzt.
+- Zentrales Popup (Modal) mit Titel + optionaler Beschreibung erstellt.
+- Speichern legt Event am aktuell ausgewaehlten Tag an.
+
+11) Prompt
+"entferne dann das untere ueberfluessige widget . dokumentiere diesen chat mit promps und antworten unter dokumentation cem, erstelle '03.19(2)'."
+
+Antwort / Umsetzung
+- Unteres, altes "Neues Ereignis"-Widget aus der Kalenderansicht entfernt.
+- Diese Dokumentationsdatei erstellt: dokumentation/cem/03.19(2).
+
+Technischer Hinweis
+- Nach allen relevanten Schritten wurden Syntaxchecks (php -l) auf den betroffenen Dateien ohne Fehler ausgefuehrt.

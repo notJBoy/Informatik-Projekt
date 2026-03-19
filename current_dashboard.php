@@ -1311,30 +1311,89 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         .exam-past { opacity: 0.55; }
 
         /* Kalender Styling */
+        #calendarLayout {
+            display: grid;
+            grid-template-columns: minmax(360px, 620px) minmax(240px, 1fr);
+            gap: 1rem;
+            align-items: start;
+        }
+
+        #calendarContainer {
+            max-width: 620px;
+        }
+
         #calendarControls {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.5rem;
         }
+
+        #calendarSelectedHint {
+            font-size: 0.85rem;
+            color: var(--color-text-muted);
+            margin-bottom: 0.45rem;
+        }
+
+        #calendarControls .btn-secondary {
+            padding: 0.45rem 0.9rem;
+        }
+
         #calendarGrid th, #calendarGrid td {
             border: 1px solid var(--color-border);
             width: 14.28%;
-            height: 80px;
+            height: 56px;
             vertical-align: top;
-            padding: 0.25rem;
+            padding: 0.2rem;
             position: relative;
         }
+
+        #calendarGrid th {
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
+        }
+
         #calendarGrid td {
             cursor: pointer;
         }
+
         #calendarGrid td:hover {
             background-color: var(--color-bg-hover);
         }
+
+        #calendarGrid td.cal-today {
+            background-color: #2166f0;
+            border-color: #c0c0c0;
+        }
+
+        #calendarGrid td.cal-today .cal-day-number {
+            color: #f2f2f2;
+        }
+
+        #calendarGrid td.cal-selected {
+            background-color: #cacaca;
+            border-color: #cccccc;
+        }
+
+        #calendarGrid td.cal-selected .cal-day-number {
+            color: #1f2937;
+        }
+
+        #calendarGrid td.cal-today.cal-selected {
+            background-color: #0049da;
+            border-color: #c0c0c0;
+        }
+
+        #calendarGrid td.cal-today.cal-selected .cal-day-number {
+            color: #f2f2f2;
+        }
+
         .cal-day-number {
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.1rem;
+            font-size: 0.85rem;
         }
+
         .event-dot {
             width: 6px;
             height: 6px;
@@ -1344,10 +1403,37 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             bottom: 4px;
             right: 4px;
         }
+
+        #calendarGrid td.cal-today .event-dot {
+            background-color: #ffffff;
+        }
+
+        #calendarDayEvents {
+            min-height: 100%;
+            border: 1px solid var(--color-border);
+            border-radius: 12px;
+            background: var(--color-bg-secondary);
+        }
+
+        #calendarDayLabel {
+            margin-bottom: 0.6rem;
+        }
+
         #calendarEventList .calendar-event-item {
             padding: 0.5rem;
             border-bottom: 1px solid var(--color-border-light);
         }
+
+        @media (max-width: 1024px) {
+            #calendarLayout {
+                grid-template-columns: 1fr;
+            }
+
+            #calendarContainer {
+                max-width: 100%;
+            }
+        }
+
         #calendarEventList .calendar-event-item.exam { background-color: var(--color-info)33; }
         #calendarEventList .calendar-event-item.todo { background-color: var(--color-success)33; }
         #calendarEventList .calendar-event-item.extra { background-color: var(--color-primary)33; }
@@ -2190,7 +2276,7 @@ themeToggle.addEventListener('click', () => {
             }
 
             renderCalendar();
-            if (currentSelectedDate) showEventsForDate(currentSelectedDate);
+            if (currentSelectedDate) showEventsForDate(currentSelectedDate, false);
             renderOverviewCalendar();
         }
 
@@ -2731,11 +2817,29 @@ themeToggle.addEventListener('click', () => {
         let currentCalYear;
         let currentSelectedDate = null; // für Anzeige der Tagesereignisse
 
+        function toDateStr(dateObj) {
+            return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2,'0')}-${String(dateObj.getDate()).padStart(2,'0')}`;
+        }
+
+        function getMonthPrefix(year, month) {
+            return `${year}-${String(month + 1).padStart(2, '0')}-`;
+        }
+
+        function getVisibleDefaultDate() {
+            const today = new Date();
+            if (today.getFullYear() === currentCalYear && today.getMonth() === currentCalMonth) {
+                return toDateStr(today);
+            }
+            return `${currentCalYear}-${String(currentCalMonth + 1).padStart(2, '0')}-01`;
+        }
+
         function initCalendar() {
             const today = new Date();
             currentCalMonth = today.getMonth();
             currentCalYear = today.getFullYear();
+            currentSelectedDate = toDateStr(today);
             renderCalendar();
+            showEventsForDate(currentSelectedDate, false);
         }
 
         function renderCalendar() {
@@ -2747,16 +2851,18 @@ themeToggle.addEventListener('click', () => {
             const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
             label.textContent = monthNames[currentCalMonth] + ' ' + currentCalYear;
 
-            // erste Wochentag des Monats
-            const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay(); // 0=Sonntag
+            // erster Wochentag des Monats (Montag = 0, Sonntag = 6)
+            const firstDayJs = new Date(currentCalYear, currentCalMonth, 1).getDay(); // 0=Sonntag
+            const firstDay = (firstDayJs + 6) % 7;
             const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
 
             // grid aufbauen
             let html = '<tr>';
-            ['So','Mo','Di','Mi','Do','Fr','Sa'].forEach(d => html += '<th>'+d+'</th>');
+            ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(d => html += '<th>'+d+'</th>');
             html += '</tr>';
 
             let day = 1;
+            const todayStr = toDateStr(new Date());
             for (let week = 0; week < 6; week++) {
                 html += '<tr>';
                 for (let w = 0; w < 7; w++) {
@@ -2775,25 +2881,38 @@ themeToggle.addEventListener('click', () => {
                         }
                         day++;
                     }
-                    html += `<td data-date="${dateStr}" onclick="showEventsForDate('${dateStr}')">${content}</td>`;
+                    const classes = [];
+                    if (dateStr && dateStr === todayStr) classes.push('cal-today');
+                    if (dateStr && dateStr === currentSelectedDate) classes.push('cal-selected');
+                    const classAttr = classes.length ? ` class="${classes.join(' ')}"` : '';
+                    html += `<td data-date="${dateStr}"${classAttr} onclick="showEventsForDate('${dateStr}')">${content}</td>`;
                 }
                 html += '</tr>';
             }
             container.innerHTML = html;
         }
 
-        function showEventsForDate(dateStr) {
+        function showEventsForDate(dateStr, refreshCalendar = true) {
             const listEl = document.getElementById('calendarEventList');
             const label = document.getElementById('calendarDayLabel');
             const wrapper = document.getElementById('calendarDayEvents');
+            const selectedHint = document.getElementById('calendarSelectedHint');
             if (!listEl || !label || !wrapper) return;
             currentSelectedDate = dateStr;
+            if (refreshCalendar) {
+                renderCalendar();
+            }
             if (!dateStr) {
-                wrapper.style.display = 'none';
+                label.textContent = 'Kein Tag ausgewählt';
+                listEl.innerHTML = '<p style="color:var(--color-text-muted)">Bitte einen Tag wählen</p>';
+                if (selectedHint) selectedHint.textContent = 'Ausgewählt: Kein Tag';
+                wrapper.style.display = 'block';
                 return;
             }
             const d = new Date(dateStr + 'T00:00:00');
-            label.textContent = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month:'2-digit', year:'numeric' });
+            const selectedText = d.toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month:'2-digit', year:'numeric' });
+            label.textContent = selectedText;
+            if (selectedHint) selectedHint.textContent = `Ausgewählt: ${selectedText}`;
             const events = getAllCalendarItems().filter(ev => ev.date === dateStr);
             if (!events.length) {
                 listEl.innerHTML = '<p style="color:var(--color-text-muted)">Keine Ereignisse</p>';
@@ -2818,9 +2937,14 @@ themeToggle.addEventListener('click', () => {
                 currentCalMonth = 11;
                 currentCalYear--;
             }
+
+            const monthPrefix = getMonthPrefix(currentCalYear, currentCalMonth);
+            if (!currentSelectedDate || !currentSelectedDate.startsWith(monthPrefix)) {
+                currentSelectedDate = getVisibleDefaultDate();
+            }
+
             renderCalendar();
-            // clear selection
-            showEventsForDate(null);
+            showEventsForDate(currentSelectedDate, false);
         }
         function nextMonth() {
             currentCalMonth++;
@@ -2828,8 +2952,14 @@ themeToggle.addEventListener('click', () => {
                 currentCalMonth = 0;
                 currentCalYear++;
             }
+
+            const monthPrefix = getMonthPrefix(currentCalYear, currentCalMonth);
+            if (!currentSelectedDate || !currentSelectedDate.startsWith(monthPrefix)) {
+                currentSelectedDate = getVisibleDefaultDate();
+            }
+
             renderCalendar();
-            showEventsForDate(null);
+            showEventsForDate(currentSelectedDate, false);
         }
 
         async function deleteCalendarEvent(eventId) {
@@ -3661,6 +3791,70 @@ themeToggle.addEventListener('click', () => {
                 dateEl.value  = '';
                 if (descEl) descEl.value = '';
 
+                await loadCalendarExtras();
+            } catch (err) {
+                console.error('Kalendereintrag konnte nicht gespeichert werden', err);
+            }
+        }
+
+        function openCalendarQuickAddModal() {
+            const modal = document.getElementById('calendarQuickAddModal');
+            const dateLabel = document.getElementById('calendarQuickAddDateLabel');
+            const titleEl = document.getElementById('quickEventTitle');
+            const descEl = document.getElementById('quickEventDesc');
+            if (!modal || !dateLabel) return;
+
+            const selectedDate = currentSelectedDate || getVisibleDefaultDate();
+            if (selectedDate && selectedDate !== currentSelectedDate) {
+                showEventsForDate(selectedDate);
+            }
+
+            const d = new Date((currentSelectedDate || selectedDate) + 'T00:00:00');
+            dateLabel.textContent = d.toLocaleDateString('de-DE', {
+                weekday: 'long',
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+            });
+
+            if (titleEl) titleEl.value = '';
+            if (descEl) descEl.value = '';
+
+            modal.classList.add('open');
+            if (titleEl) titleEl.focus();
+        }
+
+        function closeCalendarQuickAddModal() {
+            const modal = document.getElementById('calendarQuickAddModal');
+            if (!modal) return;
+            modal.classList.remove('open');
+        }
+
+        async function submitCalendarQuickAdd() {
+            const titleEl = document.getElementById('quickEventTitle');
+            const descEl = document.getElementById('quickEventDesc');
+            const selectedDate = currentSelectedDate || getVisibleDefaultDate();
+            if (!titleEl || !selectedDate) return;
+
+            const title = titleEl.value.trim();
+            if (!title) {
+                titleEl.focus();
+                return;
+            }
+
+            try {
+                const res = await fetch('calendar/calendar_add.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title,
+                        date: selectedDate,
+                        description: descEl ? descEl.value.trim() : ''
+                    })
+                });
+                if (!res.ok) throw new Error();
+
+                closeCalendarQuickAddModal();
                 await loadCalendarExtras();
             } catch (err) {
                 console.error('Kalendereintrag konnte nicht gespeichert werden', err);

@@ -9,33 +9,38 @@
                     <div class="widget">
                         <div class="widget-header">
                             <div class="widget-title">Monatsübersicht</div>
+                            <button class="btn-primary" onclick="openCalendarQuickAddModal()">Ereignis hinzufügen</button>
                         </div>
-                        <div id="calendarContainer" style="padding:1rem;">
-                            <div id="calendarControls" style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
-                                <button class="btn-secondary" onclick="prevMonth()">◀</button>
-                                <span id="calendarMonthLabel" style="font-weight:600"></span>
-                                <button class="btn-secondary" onclick="nextMonth()">▶</button>
+                        <div id="calendarLayout" style="padding:1rem;">
+                            <div id="calendarContainer">
+                                <div id="calendarControls" style="margin-bottom:0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                                    <button class="btn-secondary" onclick="prevMonth()">◀</button>
+                                    <span id="calendarMonthLabel" style="font-weight:600"></span>
+                                    <button class="btn-secondary" onclick="nextMonth()">▶</button>
+                                </div>
+                                <div id="calendarSelectedHint">Ausgewählt: -</div>
+                                <table id="calendarGrid" style="width:100%; border-collapse:collapse;"></table>
                             </div>
-                            <table id="calendarGrid" style="width:100%; border-collapse:collapse;"></table>
-                        </div>
-
-                        <!-- Liste der Ereignisse eines Tages -->
-                        <div id="calendarDayEvents" style="padding:1rem; display:none;">
-                            <h3 id="calendarDayLabel"></h3>
-                            <div id="calendarEventList"></div>
+                            <div id="calendarDayEvents" style="padding:1rem;">
+                                <h3 id="calendarDayLabel"></h3>
+                                <div id="calendarEventList"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Termin hinzufügen -->
-                    <div class="widget" style="margin-top:1.5rem;">
-                        <div class="widget-header">
-                            <div class="widget-title">Neues Ereignis</div>
-                        </div>
-                        <div class="input-group" style="flex-wrap: wrap; gap: 0.5rem;">
-                            <input type="text" id="eventTitle" placeholder="Titel..." style="flex:2 1 180px;">
-                            <input type="date" id="eventDate" style="flex:1 1 140px;">
-                            <input type="text" id="eventDesc" placeholder="Beschreibung (optional)" style="flex:2 1 180px;">
-                            <button class="btn-primary" onclick="addCalendarEvent()">+ Hinzufügen</button>
+                    <div class="modal-overlay" id="calendarQuickAddModal">
+                        <div class="modal-box" style="max-width: 500px;">
+                            <h2>📌 Ereignis hinzufügen</h2>
+                            <div class="modal-section">
+                                <h3>Ausgewählter Tag</h3>
+                                <p id="calendarQuickAddDateLabel" style="color:var(--color-text-secondary); margin-bottom:0.4rem;">-</p>
+                                <input type="text" id="quickEventTitle" placeholder="Titel...">
+                                <input type="text" id="quickEventDesc" placeholder="Beschreibung (optional)...">
+                            </div>
+                            <div class="modal-footer">
+                                <button class="modal-btn modal-btn-primary" onclick="submitCalendarQuickAdd()">Speichern</button>
+                                <button class="modal-btn modal-btn-close" onclick="closeCalendarQuickAddModal()">Abbrechen</button>
+                            </div>
                         </div>
                     </div>
                 </div>
