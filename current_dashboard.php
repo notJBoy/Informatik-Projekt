@@ -3728,8 +3728,8 @@ themeToggle.addEventListener('click', () => {
                     method: 'DELETE'
                 });
                 if (res.ok) {
-                    const el = document.getElementById(`grade-${gradeId}`);
-                    if (el) el.remove();
+                    await loadGrades();
+                    renderOverviewGrades();
                 }
             } catch { /* Server nicht erreichbar */ }
         }

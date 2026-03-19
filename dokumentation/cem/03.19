@@ -1,0 +1,43 @@
+Datum: 19.03.2026
+Autor: Cem (Dokumentation durch Copilot)
+
+Chat-Dokumentation
+
+1. Thema und Ziel
+- Bugfix in der Notenansicht: Nach dem Loeschen einer Note soll der Durchschnitt sofort neu berechnet werden.
+- Danach: Aenderungen committen und auf main pushen.
+
+2. Problemstellung
+- In der Notenansicht wurde beim Loeschen nur das einzelne Element aus dem DOM entfernt.
+- Die Durchschnittsanzeige blieb dadurch veraltet, bis ein manueller Reload erfolgte.
+
+3. Umgesetzte technische Aenderung
+- In current_dashboard.php wurde die Funktion removeGrade angepasst.
+- Nach erfolgreichem DELETE-Request wird jetzt loadGrades() aufgerufen.
+- Zusaetzlich wird renderOverviewGrades() aufgerufen, damit auch der Ueberblick sofort aktualisiert ist.
+
+4. Ergebnis
+- Der Durchschnitt wird direkt nach dem Loeschen korrekt neu berechnet und angezeigt.
+- Notenliste und Uebersicht bleiben konsistent ohne manuellen Seitenreload.
+
+5. Git-Hinweis
+- Beim Arbeitsstand war zusaetzlich learnhub.db lokal geaendert (nicht Teil des Bugfixes).
+- Fuer den Commit wurden nur die relevanten Projektdateien ausgewaehlt.
+
+6. Vollstaendiger Chat-Verlauf (chronologisch)
+
+User:
+"wenn man ne note deleted dann soll der durchschnitt ausgerechnet werden damit der wert nicht veraltet ist"
+
+Assistent:
+- Analyse der Noten- und Durchschnittslogik in Frontend/Backend.
+- Festgestellt: removeGrade entfernte nur das Listenelement und triggerte keine Neuberechnung.
+- Fix eingebaut: Nach erfolgreichem Loeschen -> await loadGrades(); renderOverviewGrades();
+- Rueckmeldung: Durchschnitt aktualisiert sich jetzt sofort korrekt.
+
+User:
+"comitte es und pushe es. dokumentiere den chat unter dekumentation cem. erstelle dazu eine neue datei mit dem namen \"03.19\""
+
+Assistent:
+- Neue Dokumentationsdatei dokumentation/cem/03.19 erstellt.
+- Commit und Push fuer Bugfix + Doku ausgefuehrt.
