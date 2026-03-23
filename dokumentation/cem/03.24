@@ -1,0 +1,97 @@
+Datum: 24.03.2026
+Autor: Cem (Dokumentation durch Copilot)
+
+Chat-Dokumentation – Prompts und Antworten
+
+---
+
+Prompt 1:
+"wenn man auf dashboard anpassen clickt soll der hintergrund dunkler werden und die widgets zum vordergrund erscheinen damit man erkennen kann, dass man die widgets bewegen kann"
+
+Antwort / Umsetzung:
+- Beim Aktivieren des Customize-Modus wird ein halbtransparentes dunkles Overlay (rgba(0,0,0,0.55)) mit Einblendanimation ueber das Dashboard gelegt.
+- Das Widget-Grid und alle Widgets erhalten einen hoeheren z-index (11/12), sodass sie sichtbar ueber dem Overlay schweben.
+- Jedes Widget bekommt einen blauen Outline-Ring (box-shadow mit color-primary) und wird leicht angehoben (translateY(-3px)), um die Verschiebbarkeit deutlich zu machen.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 2:
+"der button soll mit erhellen"
+
+Antwort / Umsetzung:
+- Der "Dashboard anpassen"-Button erhaelt im aktiven Zustand z-index: 11, sodass er ebenfalls ueber dem dunklen Overlay sichtbar bleibt.
+- Zusaetzlich bekommt er einen leuchtenden Ring (box-shadow mit Primaerfarbe).
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 3:
+"links vom titel ist ein punkt. plaziere diesen anstelle des feldes wo man die farbe auswählt, aber so dass man die farbe weiterhin ändern kann"
+
+Antwort / Umsetzung:
+- Das native Farbauswahl-Input wurde per CSS ausgeblendet (display: none).
+- Der Farbvorschau-Punkt (calendar-title-preview-dot) wurde mit onclick="document.getElementById('quickEventColor').click()" versehen, sodass ein Klick auf den Punkt den nativen Farbwaehler oeffnet.
+- Der Punkt bekommt cursor: pointer und einen Hover-Effekt (leichte Vergroesserung + Leuchtschatten).
+- Betroffene Dateien: current_dashboard.php, tabs/calendar.php
+
+---
+
+Prompt 4:
+"bitte rechts vom titel"
+
+Antwort / Umsetzung:
+- Reihenfolge der Elemente in .calendar-title-input-row geaendert: Titel-Input zuerst, dann der Punkt rechts davon.
+- Betroffene Datei: tabs/calendar.php
+
+---
+
+Prompt 5:
+"die farbe soll direkt daneben auswählbar sein"
+
+Antwort / Umsetzung:
+- Die CSS-Regel "display: none" fuer #quickEventColor wurde entfernt, sodass der Farbwaehler-Input wieder sichtbar direkt neben dem Punkt erscheint.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 6:
+"kannst du den kasten zur farbauswahl unsichtbar machen sodass man nur den punkt sieht"
+
+Antwort / Umsetzung:
+- #quickEventColor mit position: absolute, width/height: 1px, clip, clip-path, opacity: 0 und pointer-events: none visuell unsichtbar gemacht – technisch aber weiterhin aktiv, damit der Klick auf den Punkt den Farbwaehler oeffnet.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 7:
+"mache den punkt erneut links dann ist alles okay"
+
+Antwort / Umsetzung:
+- Reihenfolge in .calendar-title-input-row zurueckgesetzt: Punkt zuerst (links), dann Titel-Input rechts davon.
+- Betroffene Datei: tabs/calendar.php
+
+---
+
+Prompt 8:
+"mache das von und bis nebeneinander"
+
+Antwort / Umsetzung:
+- .calendar-time-row von grid-template-columns: 1fr auf repeat(2, minmax(0, 1fr)) geaendert.
+- Zeit-Inputs auf width: 100% gesetzt, damit beide Felder sauber in ihren Spalten liegen.
+- Betroffene Datei: current_dashboard.php
+
+---
+
+Prompt 9:
+"darüber noch uhrzeit:"
+
+Antwort / Umsetzung:
+- Ein <label class="calendar-repeat-label">Uhrzeit:</label> direkt ueber dem Von/Bis-Grid eingefuegt.
+- Betroffene Datei: tabs/calendar.php
+
+---
+
+Zusammenfassung der betroffenen Dateien:
+- current_dashboard.php (Dashboard Customize-Modus Overlay, Widget-Hervorhebung, Farbpunkt-Styling, Zeit-Layout)
+- tabs/calendar.php (Farbpunkt-Position, Uhrzeit-Label)

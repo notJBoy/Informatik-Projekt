@@ -353,6 +353,9 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             background-color: var(--color-primary);
             color: white;
             border-color: var(--color-primary);
+            position: relative;
+            z-index: 11;
+            box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb, 13, 110, 253), 0.35), var(--shadow-md);
         }
 
         /* Bento Grid Layout */
@@ -377,17 +380,39 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             transform: translateY(-2px);
         }
 
+        /* Customize Mode Overlay */
+        #overview.customize-mode-active::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            z-index: 10;
+            pointer-events: none;
+            animation: overlayFadeIn 0.25s ease forwards;
+        }
+
+        @keyframes overlayFadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+
+        #overviewWidgetGrid.widget-customize-mode {
+            position: relative;
+            z-index: 11;
+        }
+
         #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id] {
             cursor: grab;
+            z-index: 12;
+            position: relative;
+            box-shadow: var(--shadow-lg), 0 0 0 2px var(--color-primary);
+            transform: translateY(-3px);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
 
         #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].widget-dragging {
             opacity: 0.55;
             cursor: grabbing;
-        }
-
-        #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id] {
-            position: relative;
         }
 
         #overviewWidgetGrid.widget-customize-mode .widget[data-widget-id].drop-swap-target {
@@ -1471,6 +1496,22 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             margin-bottom: 0;
         }
 
+        .calendar-title-input-row input[type="text"] {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .calendar-title-input-row input[type="color"] {
+            width: 42px;
+            min-width: 42px;
+            height: 36px;
+            padding: 2px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-bg-primary);
+            cursor: pointer;
+        }
+
         .calendar-title-preview-dot {
             width: 12px;
             height: 12px;
@@ -1479,6 +1520,29 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             border: 2px solid color-mix(in srgb, var(--color-bg-secondary) 55%, transparent);
             box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-border) 75%, transparent);
             flex: 0 0 auto;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .calendar-title-preview-dot:hover {
+            transform: scale(1.25);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-border) 75%, transparent), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Keep native color picker available via dot click, but hide the input UI. */
+        #quickEventColor {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            border: 0;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(100%);
+            overflow: hidden;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
         }
 
         .calendar-title-suggestions {
@@ -1540,6 +1604,28 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         }
 
         .calendar-repeat-select:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .calendar-time-row {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.65rem;
+            margin-bottom: 0.65rem;
+        }
+
+        .calendar-time-field input[type="time"] {
+            width: 100%;
+            padding: 0.5rem 0.65rem;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            font-size: 0.9rem;
+        }
+
+        .calendar-time-field input[type="time"]:focus {
             outline: none;
             border-color: var(--color-primary);
         }
@@ -2350,14 +2436,17 @@ themeToggle.addEventListener('click', () => {
                 title,
                 date,
                 description: String(entry.description || '').trim(),
+                color: normalizeHexColor(entry.color),
                 recurrence: normalizeCalendarRecurrence(entry),
-                exception_dates: normalizeCalendarExceptionDates(entry.exception_dates)
+                exception_dates: normalizeCalendarExceptionDates(entry.exception_dates),
+                start_time: normalizeTimeValue(entry.start_time),
+                end_time: normalizeTimeValue(entry.end_time)
             };
         }
 
         function normalizeCalendarRecurrence(entry) {
             const recurrence = String(entry?.recurrence || '').trim().toLowerCase();
-            if (recurrence === 'weekly' || recurrence === 'monthly') return recurrence;
+            if (recurrence === 'weekly' || recurrence === 'monthly' || recurrence === 'yearly') return recurrence;
             if (entry?.repeat_weekly === true || entry?.repeat_weekly === 1 || entry?.repeat_weekly === '1') {
                 return 'weekly';
             }
@@ -2515,6 +2604,9 @@ themeToggle.addEventListener('click', () => {
                             date: ev.date,
                             title: ev.title,
                             description: ev.description,
+                            start_time: ev.start_time,
+                            end_time: ev.end_time,
+                            color: ev.color,
                             type: 'extra',
                             recurrence: 'none',
                             exception_dates: ev.exception_dates
@@ -2533,6 +2625,9 @@ themeToggle.addEventListener('click', () => {
                         date: occurrenceDate,
                         title: ev.title,
                         description: ev.description,
+                        start_time: ev.start_time,
+                        end_time: ev.end_time,
+                        color: ev.color,
                         type: 'extra',
                         recurrence: ev.recurrence,
                         exception_dates: ev.exception_dates,
@@ -2552,6 +2647,29 @@ themeToggle.addEventListener('click', () => {
                     while (occurrenceDate && occurrenceDate <= rangeEnd) {
                         pushOccurrence(occurrenceDate);
                         occurrenceDate = addDaysToDateStr(occurrenceDate, 7);
+                    }
+                    return;
+                }
+
+                if (ev.recurrence === 'yearly') {
+                    const rangeStartDate = parseDateOnly(rangeStart);
+                    const baseDate = parseDateOnly(ev.date);
+                    let yearOffset = 0;
+
+                    if (rangeStartDate && baseDate) {
+                        yearOffset = Math.max(0, rangeStartDate.getFullYear() - baseDate.getFullYear());
+                    }
+
+                    let occurrenceDate = addMonthsToDateStr(ev.date, yearOffset * 12);
+                    while (occurrenceDate && occurrenceDate < rangeStart) {
+                        yearOffset += 1;
+                        occurrenceDate = addMonthsToDateStr(ev.date, yearOffset * 12);
+                    }
+
+                    while (occurrenceDate && occurrenceDate <= rangeEnd) {
+                        pushOccurrence(occurrenceDate);
+                        yearOffset += 1;
+                        occurrenceDate = addMonthsToDateStr(ev.date, yearOffset * 12);
                     }
                     return;
                 }
@@ -3187,6 +3305,7 @@ themeToggle.addEventListener('click', () => {
         let currentCalYear;
         let currentSelectedDate = null; // für Anzeige der Tagesereignisse
         let pendingCalendarDelete = null;
+        const DEFAULT_CALENDAR_EVENT_COLOR = '#0d6efd';
         const CALENDAR_TITLE_COLORS = ['#e11d48', '#f97316', '#ca8a04', '#65a30d', '#0f766e', '#0284c7', '#1d4ed8', '#7c3aed', '#c026d3', '#db2777', '#dc2626', '#0891b2', '#4f46e5', '#059669', '#d97706', '#4338ca'];
 
         function toDateStr(dateObj) {
@@ -3195,6 +3314,23 @@ themeToggle.addEventListener('click', () => {
 
         function normalizeCalendarTitle(title) {
             return String(title || '').trim().toLocaleLowerCase('de-DE');
+        }
+
+        function normalizeHexColor(colorValue, fallback = DEFAULT_CALENDAR_EVENT_COLOR) {
+            const color = String(colorValue || '').trim();
+            return /^#[0-9a-fA-F]{6}$/.test(color) ? color.toLowerCase() : fallback;
+        }
+
+        function normalizeTimeValue(timeValue, fallback = '') {
+            const time = String(timeValue || '').trim();
+            return /^([01]\d|2[0-3]):[0-5]\d$/.test(time) ? time : fallback;
+        }
+
+        function getCalendarEventTimeLabel(eventItem) {
+            const startTime = normalizeTimeValue(eventItem?.start_time);
+            const endTime = normalizeTimeValue(eventItem?.end_time);
+            if (!startTime || !endTime || endTime <= startTime) return '';
+            return `${startTime} - ${endTime}`;
         }
 
         function getUniqueCalendarTitleEntries(titles) {
@@ -3256,6 +3392,7 @@ themeToggle.addEventListener('click', () => {
 
         function getCalendarItemColor(item) {
             if (item?.type === 'holiday') return '#b91c1c';
+            if (item?.type === 'extra') return normalizeHexColor(item?.color);
             return getCalendarTitleColor(item?.title || '');
         }
 
@@ -3266,13 +3403,16 @@ themeToggle.addEventListener('click', () => {
         function getCalendarRecurrenceLabel(recurrence) {
             if (recurrence === 'weekly') return 'wöchentlich';
             if (recurrence === 'monthly') return 'monatlich';
+            if (recurrence === 'yearly') return 'jährlich';
             return '';
         }
 
         function updateCalendarTitlePreview(title) {
             const preview = document.getElementById('calendarTitleColorPreview');
             if (!preview) return;
-            preview.style.setProperty('--event-dot-color', getCalendarTitleColor(title));
+            const colorInput = document.getElementById('quickEventColor');
+            const selectedColor = normalizeHexColor(colorInput?.value);
+            preview.style.setProperty('--event-dot-color', selectedColor || getCalendarTitleColor(title));
         }
 
         function updateCalendarTitleSuggestions(filterText = '') {
@@ -3435,8 +3575,10 @@ themeToggle.addEventListener('click', () => {
                         }
                     }
                     const recurringLabel = getCalendarRecurrenceLabel(ev.recurrence);
+                    const timeLabel = getCalendarEventTimeLabel(ev);
+                    const timeText = timeLabel ? ` · ${timeLabel}` : '';
                     const recurringText = recurringLabel ? ` · ${recurringLabel}` : '';
-                    return `<div class="calendar-event-item ${ev.type}"><div class="calendar-event-content"><span class="calendar-event-dot" style="--event-dot-color:${getCalendarItemColor(ev)}"></span><span>${icon}</span><span class="calendar-event-text"><strong>${escapeHtml(ev.title)}</strong>${recurringText}${ev.description ? ' – ' + escapeHtml(ev.description) : ''}</span></div>${deleteBtn}</div>`;
+                    return `<div class="calendar-event-item ${ev.type}"><div class="calendar-event-content"><span class="calendar-event-dot" style="--event-dot-color:${getCalendarItemColor(ev)}"></span><span>${icon}</span><span class="calendar-event-text"><strong>${escapeHtml(ev.title)}</strong>${timeText}${recurringText}${ev.description ? ' – ' + escapeHtml(ev.description) : ''}</span></div>${deleteBtn}</div>`;
                 }).join('');
             }
             wrapper.style.display = 'block';
@@ -4216,6 +4358,11 @@ themeToggle.addEventListener('click', () => {
         function setOverviewCustomizeMode(enabled) {
             overviewCustomizeMode = !!enabled;
 
+            const overview = document.getElementById('overview');
+            if (overview) {
+                overview.classList.toggle('customize-mode-active', overviewCustomizeMode);
+            }
+
             const grid = document.getElementById('overviewWidgetGrid');
             if (grid) {
                 grid.classList.toggle('widget-customize-mode', overviewCustomizeMode);
@@ -4359,6 +4506,9 @@ themeToggle.addEventListener('click', () => {
             const titleEl = document.getElementById('quickEventTitle');
             const descEl = document.getElementById('quickEventDesc');
             const recurrenceEl = document.getElementById('quickEventRecurrence');
+            const colorEl = document.getElementById('quickEventColor');
+            const startTimeEl = document.getElementById('quickEventStartTime');
+            const endTimeEl = document.getElementById('quickEventEndTime');
             if (!modal || !dateLabel) return;
 
             const selectedDate = currentSelectedDate || getVisibleDefaultDate();
@@ -4377,6 +4527,9 @@ themeToggle.addEventListener('click', () => {
             if (titleEl) titleEl.value = '';
             if (descEl) descEl.value = '';
             if (recurrenceEl) recurrenceEl.value = 'none';
+            if (colorEl) colorEl.value = DEFAULT_CALENDAR_EVENT_COLOR;
+            if (startTimeEl) startTimeEl.value = '';
+            if (endTimeEl) endTimeEl.value = '';
 
             updateCalendarTitleSuggestions();
 
@@ -4394,12 +4547,27 @@ themeToggle.addEventListener('click', () => {
             const titleEl = document.getElementById('quickEventTitle');
             const descEl = document.getElementById('quickEventDesc');
             const recurrenceEl = document.getElementById('quickEventRecurrence');
+            const colorEl = document.getElementById('quickEventColor');
+            const startTimeEl = document.getElementById('quickEventStartTime');
+            const endTimeEl = document.getElementById('quickEventEndTime');
             const selectedDate = currentSelectedDate || getVisibleDefaultDate();
             if (!titleEl || !selectedDate) return;
 
             const title = titleEl.value.trim();
+            const startTime = normalizeTimeValue(startTimeEl?.value);
+            const endTime = normalizeTimeValue(endTimeEl?.value);
             if (!title) {
                 titleEl.focus();
+                return;
+            }
+            if (!!startTime !== !!endTime) {
+                alert('Bitte beide Zeiten angeben oder beide leer lassen.');
+                if (startTimeEl) startTimeEl.focus();
+                return;
+            }
+            if (startTime && endTime && endTime <= startTime) {
+                alert('Die Endzeit muss nach der Startzeit liegen.');
+                if (endTimeEl) endTimeEl.focus();
                 return;
             }
 
@@ -4411,7 +4579,10 @@ themeToggle.addEventListener('click', () => {
                         title,
                         date: selectedDate,
                         recurrence: recurrenceEl ? recurrenceEl.value : 'none',
-                        description: descEl ? descEl.value.trim() : ''
+                        description: descEl ? descEl.value.trim() : '',
+                        color: normalizeHexColor(colorEl?.value),
+                        start_time: startTime,
+                        end_time: endTime
                     })
                 });
                 if (!res.ok) throw new Error();

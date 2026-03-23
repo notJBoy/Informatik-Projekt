@@ -160,6 +160,9 @@ def init_db():
         recurrence TEXT DEFAULT 'none',
         exception_dates TEXT DEFAULT '[]',
         description TEXT,
+        color TEXT DEFAULT '#0d6efd',
+        start_time TEXT,
+        end_time TEXT,
         created_at TEXT
     )
     """)
@@ -174,6 +177,18 @@ def init_db():
         pass
     try:
         cursor.execute("ALTER TABLE calendar_extras ADD COLUMN exception_dates TEXT DEFAULT '[]'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE calendar_extras ADD COLUMN color TEXT DEFAULT '#0d6efd'")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE calendar_extras ADD COLUMN start_time TEXT")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE calendar_extras ADD COLUMN end_time TEXT")
     except Exception:
         pass
     cursor.execute(
@@ -411,6 +426,20 @@ def is_valid_email(email: str) -> bool:
     return bool(local and domain and "." in domain)
 
 
+def normalize_hex_color(value: Optional[str], default: str = "#0d6efd") -> str:
+    color = str(value or "").strip()
+    if re.fullmatch(r"#[0-9a-fA-F]{6}", color):
+        return color.lower()
+    return default
+
+
+def normalize_time_value(value: Optional[str]) -> str:
+    time_value = str(value or "").strip()
+    if re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", time_value):
+        return time_value
+    return ""
+
+
 def hash_verification_code(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
 
@@ -620,6 +649,9 @@ class CalendarExtraCreate(BaseModel):
     date: str
     recurrence: str = "none"
     description: Optional[str] = ""
+    color: Optional[str] = "#0d6efd"
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
 
 
 class AdminMessageCreate(BaseModel):
@@ -1641,13 +1673,20 @@ def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
     cursor = db.cursor()
     event_id = generate_id()
     recurrence = (event.recurrence or "none").strip().lower()
-    if recurrence not in {"none", "weekly", "monthly"}:
+    color = normalize_hex_color(event.color)
+    start_time = normalize_time_value(event.start_time)
+    end_time = normalize_time_value(event.end_time)
+    if recurrence not in {"none", "weekly", "monthly", "yearly"}:
         raise HTTPException(status_code=400, detail="Ungültige Wiederholung")
+    if bool(start_time) != bool(end_time):
+        raise HTTPException(status_code=400, detail="Bitte Start- und Endzeit angeben")
+    if start_time and end_time <= start_time:
+        raise HTTPException(status_code=400, detail="Endzeit muss nach Startzeit liegen")
 
     cursor.execute(
         """
-        INSERT INTO calendar_extras (id, user_id, title, date, repeat_weekly, recurrence, exception_dates, description, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO calendar_extras (id, user_id, title, date, repeat_weekly, recurrence, exception_dates, description, color, start_time, end_time, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         (
             event_id,
@@ -1658,6 +1697,9 @@ def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
             recurrence,
             "[]",
             event.description or "",
+            color,
+            start_time or None,
+            end_time or None,
             datetime.utcnow().isoformat()
         )
     )
@@ -1708,10 +1750,10 @@ def delete_calendar_extra(
         raise HTTPException(status_code=404, detail="Termin nicht gefunden")
 
     recurrence = str(row["recurrence"] or "none").strip().lower()
-    if recurrence not in {"none", "weekly", "monthly"}:
+    if recurrence not in {"none", "weekly", "monthly", "yearly"}:
         recurrence = "weekly" if row["repeat_weekly"] == 1 else "none"
 
-    if delete_scope == "occurrence" and recurrence in {"weekly", "monthly"}:
+    if delete_scope == "occurrence" and recurrence in {"weekly", "monthly", "yearly"}:
         if not occurrence_date:
             raise HTTPException(status_code=400, detail="occurrence_date fehlt")
 

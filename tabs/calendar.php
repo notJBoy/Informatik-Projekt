@@ -35,16 +35,29 @@
                                 <h3>Ausgewählter Tag</h3>
                                 <p id="calendarQuickAddDateLabel" style="color:var(--color-text-secondary); margin-bottom:0.4rem;">-</p>
                                 <div class="calendar-title-input-row">
-                                    <span id="calendarTitleColorPreview" class="calendar-title-preview-dot"></span>
+                                    <span id="calendarTitleColorPreview" class="calendar-title-preview-dot" onclick="document.getElementById('quickEventColor').click()" title="Farbe auswählen"></span>
                                     <input type="text" id="quickEventTitle" placeholder="Titel..." autocomplete="off" oninput="updateCalendarTitleSuggestions(this.value)" onfocus="updateCalendarTitleSuggestions(this.value)">
+                                    <input type="color" id="quickEventColor" value="#0d6efd" onchange="updateCalendarTitlePreview(document.getElementById('quickEventTitle')?.value || '')">
                                 </div>
                                 <div id="calendarTitleSuggestions" class="calendar-title-suggestions"></div>
                                 <input type="text" id="quickEventDesc" placeholder="Beschreibung (optional)...">
+                                <label class="calendar-repeat-label">Uhrzeit (optional):</label>
+                                <div class="calendar-time-row">
+                                    <div class="calendar-time-field">
+                                        <label class="calendar-repeat-label" for="quickEventStartTime">Von</label>
+                                        <input type="time" id="quickEventStartTime">
+                                    </div>
+                                    <div class="calendar-time-field">
+                                        <label class="calendar-repeat-label" for="quickEventEndTime">Bis</label>
+                                        <input type="time" id="quickEventEndTime">
+                                    </div>
+                                </div>
                                 <label class="calendar-repeat-label" for="quickEventRecurrence">Wiederholung</label>
                                 <select id="quickEventRecurrence" class="calendar-repeat-select">
                                     <option value="none">Keine</option>
                                     <option value="weekly">Wöchentlich</option>
                                     <option value="monthly">Monatlich</option>
+                                    <option value="yearly">Jährlich</option>
                                 </select>
                             </div>
                             <div class="modal-footer">
