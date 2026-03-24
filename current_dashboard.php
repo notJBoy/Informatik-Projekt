@@ -4959,14 +4959,14 @@ themeToggle.addEventListener('click', () => {
                         statsHtml = `<div style="font-size:0.8rem;color:var(--color-text-muted);margin-top:0.25rem;">Ø ${avg}P aus ${gradeCount} Note${gradeCount !== 1 ? 'n' : ''}</div>`;
                     }
                     return `
-                    <div class="grade-item" id="subject-${s.id}" style="border-left: 4px solid ${escapeHtml(s.color)};">
-                        <div>
-                            <span class="grade-subject">${escapeHtml(s.name)}</span>
-                            <div style="font-size:0.8rem;color:var(--color-text-muted);">Farbe: ${escapeHtml(s.color)}</div>
+                    <div class="grade-item" id="subject-${s.id}" style="border-left: 4px solid ${escapeHtml(s.color)}; cursor:pointer;" onclick="showSubjectDetails('${s.id}')">
+                            <div style="display:flex;align-items:center;gap:0.5rem;">
+                                <div style="width:20px;height:20px;background-color:${escapeHtml(s.color)};border:1px solid var(--color-border);border-radius:3px;"></div>
+                                <span class="grade-subject">${escapeHtml(s.name)}</span>
+                            </div>
                             ${statsHtml}
-                        </div>
                         <div style="display:flex;align-items:center;gap:0.5rem;">
-                            <button class="btn-icon" onclick="removeSubject('${s.id}')" title="Löschen">🗑️</button>
+                            <button class="btn-icon" onclick="event.stopPropagation(); removeSubject('${s.id}')" title="Löschen">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -4992,7 +4992,10 @@ themeToggle.addEventListener('click', () => {
                 });
                 if (res.ok) {
                     nameInput.value = '';
-                    colorInput.value = '#0d6efd';
+                    colorInput.value = '#1E90FF'; // Reset to first color (Blau)
+                    const btn = document.getElementById('subjectColorBtn');
+                    btn.style.backgroundColor = '#1E90FF';
+                    btn.style.color = getContrastColor('#1E90FF');
                     loadSubjects();
                     // Update subject dropdowns in other tabs
                     populateSubjectDropdowns();
@@ -5025,6 +5028,125 @@ themeToggle.addEventListener('click', () => {
                 console.error('Fehler beim Löschen des Fachs', err);
             }
         }
+
+        async function showSubjectDetails(subjectId) {
+            const modal = document.getElementById('detailsModal');
+            const title = document.getElementById('detailsTitle');
+            const content = document.getElementById('detailsContent');
+            
+            modal.style.display = 'flex';
+            content.innerHTML = '<p style="text-align:center;">Lade Details...</p>';
+            
+            try {
+                // Load all data
+                const [gradesRes, todosRes, examsRes] = await Promise.all([
+                    fetch('grades/grades_load.php'),
+                    fetch('todos/todos_load.php'),
+                    fetch('exams/exams_load.php')
+                ]);
+                
+                const grades = gradesRes.ok ? await gradesRes.json() : [];
+                const todos = todosRes.ok ? await todosRes.json() : [];
+                const exams = examsRes.ok ? await examsRes.json() : [];
+                
+                // Find subject name
+                const subject = subjectsData.find(s => s.id === subjectId);
+                if (!subject) {
+                    content.innerHTML = '<p style="color:red;text-align:center;">Fach nicht gefunden</p>';
+                    return;
+                }
+                
+                title.textContent = `Details für ${subject.name}`;
+                
+                // Filter data by subject
+                const subjectGrades = grades.filter(g => g.subject === subject.name);
+                const subjectTodos = todos.filter(t => t.subject === subject.name);
+                const subjectExams = exams.filter(e => e.subject === subject.name);
+                
+                // Build HTML
+                let html = '';
+                
+                // Grades
+                html += `<h4>Noten (${subjectGrades.length})</h4>`;
+                if (subjectGrades.length) {
+                    html += '<ul>';
+                    subjectGrades.forEach(g => {
+                        html += `<li>${g.value}P (${g.weight ? 'Gewichtung: ' + g.weight : 'Standard'}) ${g.description ? '- ' + escapeHtml(g.description) : ''}</li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<p>Keine Noten vorhanden</p>';
+                }
+                
+                // Todos
+                html += `<h4>To-Dos (${subjectTodos.length})</h4>`;
+                if (subjectTodos.length) {
+                    html += '<ul>';
+                    subjectTodos.forEach(t => {
+                        html += `<li>${escapeHtml(t.text)} ${t.completed ? '(Erledigt)' : '(Offen)'}</li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<p>Keine To-Dos vorhanden</p>';
+                }
+                
+                // Exams
+                html += `<h4>Klassenarbeiten (${subjectExams.length})</h4>`;
+                if (subjectExams.length) {
+                    html += '<ul>';
+                    subjectExams.forEach(e => {
+                        html += `<li>${escapeHtml(e.topic)} - ${e.date} (${e.grade ? e.grade + 'P' : 'Noch nicht benotet'})</li>`;
+                    });
+                    html += '</ul>';
+                } else {
+                    html += '<p>Keine Klassenarbeiten vorhanden</p>';
+                }
+                
+                content.innerHTML = html;
+                
+            } catch (err) {
+                console.error('Fehler beim Laden der Fach-Details', err);
+                content.innerHTML = '<p style="color:red;text-align:center;">Fehler beim Laden der Details</p>';
+            }
+        }
+
+        function openColorModal() {
+            document.getElementById('colorModal').style.display = 'flex';
+        }
+
+        function closeColorModal() {
+            document.getElementById('colorModal').style.display = 'none';
+        }
+
+        function selectColor(color) {
+            document.getElementById('subjectColor').value = color;
+            document.getElementById('subjectColorBtn').style.backgroundColor = color;
+            document.getElementById('subjectColorBtn').style.color = getContrastColor(color);
+            closeColorModal();
+        }
+
+        function getContrastColor(hex) {
+            // Simple function to get black or white text based on brightness
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            return brightness > 128 ? 'black' : 'white';
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        // Add event listener to close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const detailsModal = document.getElementById('detailsModal');
+            detailsModal.addEventListener('click', function(event) {
+                if (event.target === detailsModal) {
+                    closeDetailsModal();
+                }
+            });
+        });
 
         // Update all subject dropdowns
         async function populateSubjectDropdowns() {
