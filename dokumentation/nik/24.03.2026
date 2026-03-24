@@ -1,0 +1,39 @@
+# Dokumentation – 24.03.2026
+
+## Prompt (User)
+füge einen kleinen übergang im register vorgang hinzu. außerdem aktualisiere die heutige dokumentation von ik und füge meinen prompt, deine ausgabe und alles was du geändert hast hinzu
+
+## Ausgabe (Assistant)
+Im Registrierungsablauf wurde ein kleiner, sauberer Übergang ergänzt:
+- Dezente Fade/Slide-Animation beim Wechsel zwischen Schritt 1 (Code anfordern) und Schritt 2 (Code bestätigen)
+- Kleine Fortschrittsanzeige (Schritt 1/2 -> Schritt 2/2) direkt im Register-Formular
+
+Zusätzlich wurde die heutige Dokumentation unter NIK aktualisiert und um Prompt, Ausgabe und alle Änderungen ergänzt.
+
+## Geänderte Dateien und Inhalte
+
+### 1) auth/register.php
+Folgende Anpassungen wurden umgesetzt:
+- Neue Zustandsvariable ergänzt:
+  - `$is_confirm_step = !empty($verification_id);`
+- Neuer visueller Fortschrittsbereich ergänzt:
+  - Balken mit 2 Zuständen (`step-request` und `step-confirm`)
+  - Schritttext:
+    - "Schritt 1 von 2: Code anfordern"
+    - "Schritt 2 von 2: Verifizierung bestätigen"
+- CSS-Übergänge/Animationen ergänzt:
+  - `.register-step` mit `stepFadeIn` (leichter Fade/Slide)
+  - `progressStepOne` (0% -> 50%)
+  - `progressStepTwo` (50% -> 100%)
+- Beide Formulare (Code anfordern / Verifizierung bestätigen) mit `class="register-step"` versehen, damit der Übergang beim Schrittwechsel sichtbar ist.
+
+### 2) dokumentation/nik/24.03.2026
+- Diese heutige Dokumentationsdatei neu erstellt.
+- Enthält:
+  - Deinen Prompt
+  - Meine Ausgabe
+  - Alle konkreten Code- und Dateiänderungen
+
+## Validierung
+- `php -l auth/register.php` ausgeführt
+- Ergebnis: keine Syntaxfehler

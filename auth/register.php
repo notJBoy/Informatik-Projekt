@@ -5,6 +5,7 @@ $success_message = '';
 $verification_id = '';
 $username_value = '';
 $email_value = '';
+$is_confirm_step = false;
 
 
 // Wenn das Formular abgesendet wird
@@ -74,6 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
     }
 }
+
+$is_confirm_step = !empty($verification_id);
 ?>
 
 <!DOCTYPE html>
@@ -167,6 +170,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             font-size: 1.4rem;
         }
 
+        .register-progress {
+            position: relative;
+            height: 6px;
+            border-radius: 999px;
+            background-color: var(--color-border-light);
+            overflow: hidden;
+            margin-bottom: 0.85rem;
+        }
+
+        .register-progress-fill {
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--color-primary), var(--color-primary-hover));
+        }
+
+        .register-progress-fill.step-request {
+            width: 50%;
+            animation: progressStepOne 0.35s ease-out;
+        }
+
+        .register-progress-fill.step-confirm {
+            width: 100%;
+            animation: progressStepTwo 0.45s ease-out;
+        }
+
+        .step-label {
+            font-size: 0.8rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
         .theme-toggle {
             background: none;
             border: 1px solid var(--color-border-light);
@@ -247,6 +281,39 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .login-link a:hover {
             text-decoration: underline;
         }
+
+        .register-step {
+            animation: stepFadeIn 0.28s ease-out;
+        }
+
+        @keyframes stepFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes progressStepOne {
+            from {
+                width: 0;
+            }
+            to {
+                width: 50%;
+            }
+        }
+
+        @keyframes progressStepTwo {
+            from {
+                width: 50%;
+            }
+            to {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -259,6 +326,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </button>
         </div>
 
+        <div class="register-progress" aria-hidden="true">
+            <div class="register-progress-fill <?php echo $is_confirm_step ? 'step-confirm' : 'step-request'; ?>"></div>
+        </div>
+        <div class="step-label">
+            <?php echo $is_confirm_step ? 'Schritt 2 von 2: Verifizierung bestätigen' : 'Schritt 1 von 2: Code anfordern'; ?>
+        </div>
+
         <?php if ($success_message): ?>
             <div class="success-message"><?php echo $success_message; ?></div>
         <?php endif; ?>
@@ -268,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
 
         <?php if (!$verification_id): ?>
-            <form method="POST" action="register.php">
+            <form method="POST" action="register.php" class="register-step">
                 <input type="hidden" name="action" value="request_code">
                 <input type="text" name="username" class="input-field" placeholder="Benutzername" value="<?php echo htmlspecialchars($username_value); ?>" required>
                 <input type="email" name="email" class="input-field" placeholder="E-Mail" value="<?php echo htmlspecialchars($email_value); ?>" required>
@@ -276,7 +350,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 <button type="submit" class="button">Code senden</button>
             </form>
         <?php else: ?>
-            <form method="POST" action="register.php">
+            <form method="POST" action="register.php" class="register-step">
                 <input type="hidden" name="action" value="confirm_code">
                 <input type="hidden" name="verification_id" value="<?php echo htmlspecialchars($verification_id); ?>">
                 <input type="text" name="verification_code" class="input-field" placeholder="Verifizierungscode" required>
