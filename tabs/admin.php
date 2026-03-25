@@ -77,7 +77,7 @@
                                 <p id="adminMessageStatus" class="form-status"></p>
                             </div>
                         </div>
-                        <div class="widget">
+                        <div class="widget admin-users-widget">
                             <div class="widget-header">
                                 <div class="widget-title">Benutzerverwaltung</div>
                                 <button class="btn-primary" onclick="loadAdminUsers()">Aktualisieren</button>
@@ -98,7 +98,7 @@
                             </div>
                             <p id="adminUsersStatus" class="form-status"></p>
                         </div>
-                        <div class="widget">
+                        <div class="widget admin-sent-messages-widget">
                             <div class="widget-header">
                                 <div class="widget-title">Gesendete Admin-Nachrichten</div>
                                 <button class="btn-primary" onclick="loadAdminMessageManagement()">Aktualisieren</button>

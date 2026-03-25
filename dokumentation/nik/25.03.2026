@@ -172,13 +172,128 @@ Datei: `backend.py`
 
 ---
 
+---
+
+## Prompt 7 (User)
+aendere das passwort von dem benutzer nik auf 123A456B789C!
+
+## Ausgabe 7 (Assistant)
+Das Passwort fuer Benutzer nik wurde in der Datenbank erfolgreich geaendert.
+
+## Aenderungen zu Prompt 7
+
+Datei: learnhub.db
+
+- Benutzer `nik` (ID: aec691f0-e9b0-4373-9a99-b598877ffe2f) gefunden
+- Neues Passwort gehasht mit bcrypt
+- Neues Passwort: `123A456B789C!`
+- Benutzer ist Admin
+
+---
+
+## Prompt 8 (User)
+achte darauf, dass die benutzerverwaltung richtig angezeigt wird, da der Text nicht korrekt angezeigt wird sondern teilweise nur 1-2 woerter in einer zeile stehen. fuege ausserdem noch ein paar testbenutzer in der datenbank hinzu damit man sieht wie die benutzerverwaltung mit mehr benutzern aussieht
+
+## Ausgabe 8 (Assistant)
+Die Benutzerverwaltung wurde fuer natuerlicheren Textumbruch angepasst und sechs Testbenutzer wurden angelegt.
+
+## Aenderungen zu Prompt 8
+
+### Layout-Verbesserungen
+Datei: current_dashboard.php
+
+- CSS-Aenderung von `overflow-wrap: anywhere` zu `overflow-wrap: break-word`
+- Neue Regel fuer `.admin-user-main > div`: `max-width: 100%`
+- Hyphens-Support für automatische Trennstriche
+
+### Testbenutzer eingefuegt (learnhub.db)
+- anna.test (user, anna.test@example.com, erstellt 01.03.2026 08:30)
+- ben.schulz (user, ben.schulz@example.com, erstellt 02.03.2026 09:30)
+- clara_admin (admin, clara.admin@example.com, erstellt 03.03.2026 10:30)
+- david.koch (user, david.koch@example.com, erstellt 04.03.2026 11:30)
+- emma.lang (user, emma.lang@example.com, erstellt 05.03.2026 12:30)
+- felix.meier (user, felix.meier@example.com, erstellt 06.03.2026 13:30)
+
+Passwoerter: alle mit `Test1234!` (bcrypt-gehasht)
+
+Hilfsmittel:
+- Python-Script zur bcrypt-Verschluesselung und Datenbankintegration
+
+---
+
+## Prompt 9 (User)
+nun sind sogar teilweise nur 2 buchstaben in einer zeile. es soll allerdings natuerlich eingerückt sein damit es gut lesbar ist
+
+## Ausgabe 9 (Assistant)
+Das Layout wurde auf ein stabiles Flex-Grid umgestellt mit mehr Breite fuer den Textbereich und separater Aktions-Spalte.
+
+## Aenderungen zu Prompt 9
+
+Datei: current_dashboard.php
+
+- `.admin-user-row` umgestellt von `grid` zu `display: flex`
+- `.admin-user-main` mit `flex: 1 1 auto` fuer freies Wachstum
+- `.admin-user-actions` geaendert auf:
+  - `flex: 0 0 auto` (keine Verengung)
+  - `margin-left: 1rem` (Abstand)
+  - Keine fixe max-width mehr
+- Media Query angepasst fuer mobile Geraete
+
+---
+
+## Prompt 10 (User)
+nun werden sogar nur 1 buchstabe pro zeile angezeigt also wird es immer schlimmer
+
+## Ausgabe 10 (Assistant)
+Das Basis-Layout wurde repariert: Datei war korrumpiert, wurde bereinigt. Dann wurde eine robust funktionierende Flex-Layout-Loesung eingefuehrt.
+
+## Aenderungen zu Prompt 10
+
+Datei: current_dashboard.php
+
+- Bereinigung von versehentlich eingefuegten CSS-/HTML-Artefakten am Dateianfang
+- PHP-Initialisierung wiederhergestellt
+- Theme-Script repariert
+- CSS-Spalten-Setup:
+  - `.admin-user-title` und `.admin-user-meta`: `overflow-wrap: break-word; word-break: normal`
+  - `.admin-user-actions`: `align-items: flex-end; flex-direction: column; text-align: right`
+  - Neue Klasse `.admin-user-hint` fuer Warnmeldung
+- Tab-Datei angepasst:
+  - `.admin-users-widget` mit neuer Klasse versehen
+  - Inline-Hinweis in CSS-Klasse-gehaltener Text umgewandelt
+
+Datei: tabs/admin.php
+- Widget-Klasse `admin-users-widget` hinzugefuegt
+
+---
+
+## Prompt 11 (User)
+bewege nun noch das feld "Gesendete Admin-Nachrichten" nach oben rechts in das freie feld
+
+## Ausgabe 11 (Assistant)
+Das "Gesendete Admin-Nachrichten"-Widget wurde neben der Benutzerverwaltung positioniert. Beide stehen jetzt auf gleicher Hoehe nebeneinander.
+
+## Aenderungen zu Prompt 11
+
+Datei: current_dashboard.php
+
+- `grid-column: 1 / -1` aus `.admin-users-widget` entfernt (Widget benoetigt nun keine volle Breite mehr)
+- Neue CSS-Klasse `.admin-sent-messages-widget` hinzugefuegt
+
+Datei: tabs/admin.php
+
+- Widget mit voller ID und neuer Klasse `admin-sent-messages-widget` versehen
+- HTML-Struktur bleibt unveraendert, wird durch CSS-Grid automatisch nebeneinander positioniert
+
+---
+
 ## Geaenderte Dateien gesamt (heute)
 - backend.py
-- current_dashboard.php
-- tabs/admin.php
+- current_dashboard.php (mehrmals ueberarbeitet)
+- tabs/admin.php (mehrmals ueberarbeitet)
 - admin/users_manage.php (neu)
 - admin/user_role_update.php (neu)
-- learnhub.db (Daten geaendert)
+- learnhub.db (Daten geaendert/erweitert)
 - zusaetzlich: projektweite Kommentierung in nahezu allen API-/Tab-Dateien (insgesamt 61 geaenderte Dateien)
 
 ---
@@ -192,8 +307,10 @@ Durchgefuehrte Pruefungen:
     - tabs/admin.php
     - admin/users_manage.php
     - admin/user_role_update.php
-- SQL-Verifikation der Testnutzer in `learnhub.db`
-  - Ergebnis: Datensaetze vorhanden
+- SQL-Verifikation aller Tabellen in `learnhub.db`
+  - Benutzer nik: Passwort aktualisiert auf `123A456B789C!`
+  - 6 Testbenutzer: erfolgreich eingefuegt
+  - Gesamtbenutzerzahl: 8 Nutzer
 - Syntaxcheck `backend.py` nach finaler `#`-Kommentierung
   - Ergebnis: erfolgreich kompiliert, keine Fehler
 

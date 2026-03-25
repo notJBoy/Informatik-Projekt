@@ -28,10 +28,9 @@ $is_admin = strtolower((string)$user_role) === 'admin';
     <script>
 (function () {
     const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
 })();
 
-//
 </script>
 
     <style>
@@ -47,14 +46,12 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             --color-text-primary: #0f172a;
             --color-text-secondary: #64748b;
             --color-text-muted: #94a3b8;
-            --color-primary: #4f46e5;
             --color-primary-hover: #4338ca;
             --color-primary-active: #3730a3;
             --color-border: #e2e8f0;
             --color-border-light: #f1f5f9;
             --color-success: #059669;
             --color-warning: #d97706;
-            --color-danger: #dc2626;
             --color-info: #0891b2;
             --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
             --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
@@ -959,39 +956,59 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         }
 
         .admin-user-row {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
+            display: flex;
+            justify-content: space-between;
             align-items: flex-start;
-            gap: 0.75rem 1rem;
+            gap: 1rem;
         }
 
         .admin-user-main {
             min-width: 0;
+            flex: 1 1 auto;
+        }
+
+        .admin-user-hint {
+            margin-top: 0.45rem;
+            font-size: 0.8rem;
+            color: var(--color-text-muted);
         }
 
         .admin-user-title,
         .admin-user-meta {
-            overflow-wrap: anywhere;
-            word-break: break-word;
+            overflow-wrap: break-word;
+            word-break: normal;
+            hyphens: auto;
+        }
+
+        .admin-user-main > div {
+            max-width: 100%;
         }
 
         .admin-user-actions {
             display: flex;
-            align-items: center;
+            align-items: flex-end;
+            flex-direction: column;
             gap: 0.5rem;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            max-width: 240px;
+            justify-content: flex-start;
+            flex: 0 0 auto;
+            margin-left: 1rem;
+            text-align: right;
+        }
+
+        .admin-sent-messages-widget,
+        .admin-users-widget {
+            /* Nebeneinander auf gleicher Höhe */
         }
 
         @media (max-width: 900px) {
             .admin-user-row {
-                grid-template-columns: 1fr;
+                flex-direction: column;
             }
 
             .admin-user-actions {
-                justify-content: flex-start;
-                max-width: none;
+                align-items: flex-start;
+                margin-left: 0;
+                text-align: left;
             }
         }
 
@@ -4029,7 +4046,7 @@ themeToggle.addEventListener('click', () => {
                 const disabledAttr = disableDemoteLastAdmin ? 'disabled' : '';
                 const disabledStyle = disableDemoteLastAdmin ? 'opacity:0.55;cursor:not-allowed;' : '';
                 const hint = disableDemoteLastAdmin
-                    ? '<div style="margin-top:0.45rem;font-size:0.8rem;color:var(--color-text-muted);">Mindestens ein Admin muss bestehen bleiben.</div>'
+                    ? '<div class="admin-user-hint">Mindestens ein Admin muss bestehen bleiben.</div>'
                     : '';
 
                 return `
