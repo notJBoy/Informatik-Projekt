@@ -93,119 +93,167 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 })();
 </script>
 
-
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LearnHub Login</title>
     <style>
-        /* Light Mode Colors */
         :root {
-            --color-bg-primary:    #f8f9fa;
+            --color-bg-primary:    #f0f4f8;
             --color-bg-secondary:  #ffffff;
             --color-bg-surface:    #ffffff;
-            --color-bg-hover:      #f1f3f5;
-
-            --color-text-primary:   #1a1a1a;
-            --color-text-secondary: #6c757d;
-            --color-text-muted:     #adb5bd;
-
-            --color-primary:        #0d6efd;
-            --color-primary-hover:  #0b5ed7;
-            --color-primary-active: #0a58ca;
-
-            --color-border:       #dee2e6;
-            --color-border-light: #e9ecef;
-
-            --color-success: #198754;
-            --color-warning: #ffc107;
-            --color-danger:  #dc3545;
-            --color-info:    #0dcaf0;
-        }
-
-        /* Dark Mode Colors */
-        [data-theme="dark"] {
-            --color-bg-primary:    #0f172a;
-            --color-bg-secondary:  #1e293b;
-            --color-bg-surface:    #1e293b;
-            --color-bg-hover:      #334155;
-
-            --color-text-primary:   #f1f5f9;
-            --color-text-secondary: #cbd5e1;
+            --color-bg-hover:      #e8edf3;
+            --color-text-primary:   #0f172a;
+            --color-text-secondary: #64748b;
             --color-text-muted:     #94a3b8;
-
-            --color-primary:        #38bdf8;
-            --color-primary-hover:  #0ea5e9;
-            --color-primary-active: #0284c7;
-
-            --color-border:       #334155;
-            --color-border-light: #475569;
-
-            --color-success: #10b981;
-            --color-warning: #f59e0b;
-            --color-danger:  #ef4444;
-            --color-info:    #06b6d4;
+            --color-primary:        #4f46e5;
+            --color-primary-hover:  #4338ca;
+            --color-border:       #e2e8f0;
+            --color-border-light: #f1f5f9;
+            --color-danger:  #dc2626;
         }
 
-        * {
-            box-sizing: border-box;
+        [data-theme="dark"] {
+            --color-bg-primary:    #0a0f1e;
+            --color-bg-secondary:  #111827;
+            --color-bg-surface:    #111827;
+            --color-bg-hover:      #1e293b;
+            --color-text-primary:   #f1f5f9;
+            --color-text-secondary: #94a3b8;
+            --color-text-muted:     #64748b;
+            --color-primary:        #818cf8;
+            --color-primary-hover:  #6366f1;
+            --color-border:       #1e293b;
+            --color-border-light: #263045;
+            --color-danger:  #f87171;
         }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
             background-color: var(--color-bg-primary);
             color: var(--color-text-primary);
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        /* Subtle mesh background */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,70,229,0.1) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 85% 85%, rgba(99,102,241,0.08) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        [data-theme="dark"] body::before {
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 10%, rgba(79,70,229,0.2) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 85% 85%, rgba(129,140,248,0.12) 0%, transparent 55%);
         }
 
         .container {
+            position: relative;
+            z-index: 1;
             background-color: var(--color-bg-surface);
-            padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(15, 23, 42, 0.25);
-            width: 320px;
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.06);
+            width: 100%;
+            max-width: 380px;
             border: 1px solid var(--color-border);
+            animation: cardIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(24px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .logo-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+            letter-spacing: -0.02em;
+        }
+
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-text-primary);
+            letter-spacing: -0.03em;
+        }
+
+        .logo-subtitle {
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+            margin-top: -0.5rem;
         }
 
         .header-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
 
-        .container h2 {
-            margin: 0;
-            font-size: 1.4rem;
+        .header-row h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
         }
 
         .theme-toggle {
-            background: none;
-            border: 1px solid var(--color-border-light);
+            background: var(--color-bg-hover);
+            border: 1px solid var(--color-border);
             border-radius: 999px;
-            padding: 4px 10px;
-            font-size: 0.8rem;
+            padding: 5px 12px;
+            font-size: 0.775rem;
+            font-weight: 500;
             cursor: pointer;
             color: var(--color-text-secondary);
-            background-color: var(--color-bg-secondary);
+            font-family: inherit;
+            transition: all 0.2s ease;
         }
 
         .theme-toggle:hover {
-            background-color: var(--color-bg-hover);
+            border-color: var(--color-primary);
+            color: var(--color-primary);
         }
 
         .input-field {
             width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 4px;
+            padding: 0.75rem 1rem;
+            margin: 0.5rem 0;
+            border-radius: 10px;
             border: 1px solid var(--color-border);
-            background-color: var(--color-bg-secondary);
+            background-color: var(--color-bg-primary);
             color: var(--color-text-primary);
+            font-size: 0.9rem;
+            font-family: inherit;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
 
         .input-field::placeholder {
@@ -215,42 +263,59 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .input-field:focus {
             outline: none;
             border-color: var(--color-primary);
-            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
         }
 
         .button {
             width: 100%;
-            padding: 10px;
-            background-color: var(--color-primary);
+            padding: 0.8rem;
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
             color: #ffffff;
             border: none;
-            border-radius: 4px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 16px;
-            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            font-family: inherit;
+            margin-top: 0.75rem;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+            letter-spacing: 0.01em;
         }
 
         .button:hover {
-            background-color: var(--color-primary-hover);
+            opacity: 0.92;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 70, 229, 0.45);
+        }
+
+        [data-theme="dark"] .button {
+            background: linear-gradient(135deg, #818cf8, #6366f1);
+            box-shadow: 0 4px 14px rgba(129, 140, 248, 0.3);
         }
 
         .error-message {
             color: var(--color-danger);
             text-align: center;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+            padding: 0.6rem 0.9rem;
+            background: rgba(220, 38, 38, 0.08);
+            border-radius: 8px;
+            border: 1px solid rgba(220, 38, 38, 0.2);
         }
 
         .register-link {
             text-align: center;
-            margin-top: 1rem;
+            margin-top: 1.25rem;
             color: var(--color-text-secondary);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
         }
 
         .register-link a {
             text-decoration: none;
             color: var(--color-primary);
+            font-weight: 600;
         }
 
         .register-link a:hover {
@@ -261,21 +326,25 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
 
     <div class="container">
+        <div class="logo-area">
+            <div class="logo-icon">LH</div>
+            <span class="logo-text">LearnHub</span>
+            <span class="logo-subtitle">Deine Lernplattform</span>
+        </div>
+
         <div class="header-row">
-            <h2>Login</h2>
-            <button class="theme-toggle" type="button" id="themeToggle">
-                Darkmode
-            </button>
+            <h2>Willkommen zurück</h2>
+            <button class="theme-toggle" type="button" id="themeToggle">🌙 Dark</button>
         </div>
 
         <?php if ($error_message): ?>
-            <div class="error-message"><?php echo $error_message; ?></div>
+            <div class="error-message"><?php echo htmlspecialchars($error_message); ?></div>
         <?php endif; ?>
 
         <form method="POST" action="login.php">
             <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
-            <input type="text" name="username" class="input-field" placeholder="Benutzername" required>
-            <input type="password" name="password" class="input-field" placeholder="Passwort" required>
+            <input type="text" name="username" class="input-field" placeholder="Benutzername" required autocomplete="username">
+            <input type="password" name="password" class="input-field" placeholder="Passwort" required autocomplete="current-password">
             <button type="submit" class="button">Anmelden</button>
         </form>
 
@@ -290,7 +359,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     const toggleBtn = document.getElementById('themeToggle');
 
     const currentTheme = root.getAttribute('data-theme') || 'light';
-    toggleBtn.textContent = currentTheme === 'dark' ? 'Lightmode' : 'Darkmode';
+    toggleBtn.textContent = currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
 
     toggleBtn.addEventListener('click', function () {
         const current = root.getAttribute('data-theme') || 'light';
@@ -299,11 +368,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         root.setAttribute('data-theme', next);
         localStorage.setItem('theme', next);
 
-        toggleBtn.textContent = next === 'dark' ? 'Lightmode' : 'Darkmode';
+        toggleBtn.textContent = next === 'dark' ? '☀️ Light' : '🌙 Dark';
     });
 })();
     </script>
 
 </body>
 </html>
-

@@ -36,51 +36,59 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
     <style>
         :root {
-            --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            --font-family-mono: 'Courier New', monospace;
-            
+            --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            --font-family-mono: 'Fira Code', 'Courier New', monospace;
+
             /* Light Mode Colors */
-            --color-bg-primary: #f8f9fa;
+            --color-bg-primary: #f0f4f8;
             --color-bg-secondary: #ffffff;
             --color-bg-surface: #ffffff;
-            --color-bg-hover: #f1f3f5;
-            --color-text-primary: #1a1a1a;
-            --color-text-secondary: #6c757d;
-            --color-text-muted: #adb5bd;
-            --color-primary: #0d6efd;
-            --color-primary-hover: #0b5ed7;
-            --color-primary-active: #0a58ca;
-            --color-border: #dee2e6;
-            --color-border-light: #e9ecef;
-            --color-success: #198754;
-            --color-warning: #ffc107;
-            --color-danger: #dc3545;
-            --color-info: #0dcaf0;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --color-bg-hover: #e8edf3;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #64748b;
+            --color-text-muted: #94a3b8;
+            --color-primary: #4f46e5;
+            --color-primary-hover: #4338ca;
+            --color-primary-active: #3730a3;
+            --color-border: #e2e8f0;
+            --color-border-light: #f1f5f9;
+            --color-success: #059669;
+            --color-warning: #d97706;
+            --color-danger: #dc2626;
+            --color-info: #0891b2;
+            --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+            --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+            --shadow-lg: 0 20px 40px rgba(15, 23, 42, 0.12), 0 8px 16px rgba(15, 23, 42, 0.06);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --sidebar-width: 260px;
+            --transition-fast: 0.15s ease;
+            --transition-base: 0.2s ease;
+            --transition-slow: 0.35s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         [data-theme="dark"] {
-            --color-bg-primary: #0f172a;
-            --color-bg-secondary: #1e293b;
-            --color-bg-surface: #1e293b;
-            --color-bg-hover: #334155;
+            --color-bg-primary: #0a0f1e;
+            --color-bg-secondary: #111827;
+            --color-bg-surface: #111827;
+            --color-bg-hover: #1e293b;
             --color-text-primary: #f1f5f9;
-            --color-text-secondary: #cbd5e1;
-            --color-text-muted: #94a3b8;
-            --color-primary: #38bdf8;
-            --color-primary-hover: #0ea5e9;
-            --color-primary-active: #0284c7;
-            --color-border: #334155;
-            --color-border-light: #475569;
+            --color-text-secondary: #94a3b8;
+            --color-text-muted: #64748b;
+            --color-primary: #818cf8;
+            --color-primary-hover: #6366f1;
+            --color-primary-active: #4f46e5;
+            --color-border: #1e293b;
+            --color-border-light: #263045;
             --color-success: #10b981;
             --color-warning: #f59e0b;
-            --color-danger: #ef4444;
-            --color-info: #06b6d4;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
-            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+            --color-danger: #f87171;
+            --color-info: #22d3ee;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --shadow-lg: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
 
         * {
@@ -109,116 +117,136 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             border-right: 1px solid var(--color-border);
             display: flex;
             flex-direction: column;
-            transition: transform 0.3s ease;
+            transition: transform var(--transition-slow);
+            box-shadow: var(--shadow-sm);
         }
 
         .sidebar-header {
-            padding: 1.5rem;
+            padding: 1.5rem 1.25rem;
             border-bottom: 1px solid var(--color-border);
         }
 
         .logo {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--color-primary);
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.65rem;
+            letter-spacing: -0.02em;
         }
 
         .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
-            border-radius: 8px;
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-active));
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
+            letter-spacing: 0;
         }
 
         .sidebar-nav {
             flex: 1;
-            padding: 1rem 0;
+            padding: 1rem 0.75rem;
             overflow-y: auto;
         }
 
         .nav-section {
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
         }
 
         .nav-section-title {
-            padding: 0.5rem 1.5rem;
-            font-size: 0.75rem;
+            padding: 0.4rem 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
             color: var(--color-text-muted);
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
 
         .nav-item {
             display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem;
+            padding: 0.65rem 0.75rem;
             color: var(--color-text-secondary);
             text-decoration: none;
-            transition: all 0.2s;
+            transition: all var(--transition-base);
             cursor: pointer;
-            border-left: 3px solid transparent;
+            border-radius: var(--radius-sm);
+            margin-bottom: 2px;
+            font-size: 0.9rem;
+            font-weight: 500;
         }
 
         .nav-item:hover {
             background-color: var(--color-bg-hover);
             color: var(--color-text-primary);
+            transform: translateX(2px);
         }
 
         .nav-item.active {
-            background-color: var(--color-bg-hover);
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.12), rgba(99, 102, 241, 0.07));
             color: var(--color-primary);
-            border-left-color: var(--color-primary);
-            font-weight: 500;
+            font-weight: 600;
+        }
+
+        [data-theme="dark"] .nav-item.active {
+            background: linear-gradient(135deg, rgba(129, 140, 248, 0.18), rgba(99, 102, 241, 0.1));
         }
 
         .nav-icon {
             margin-right: 0.75rem;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
+            width: 22px;
+            text-align: center;
+            flex-shrink: 0;
         }
 
         .sidebar-footer {
-            padding: 1rem;
+            padding: 0.75rem;
             border-top: 1px solid var(--color-border);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
 
         .theme-toggle, .account-btn, .logout-btn {
             display: flex;
             align-items: center;
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 0.6rem 0.85rem;
             background: transparent;
             border: 1px solid var(--color-border);
-            border-radius: 8px;
-            color: var(--color-text-primary);
+            border-radius: var(--radius-sm);
+            color: var(--color-text-secondary);
             cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
+            transition: all var(--transition-base);
+            font-size: 0.875rem;
+            font-weight: 500;
             text-decoration: none;
+            font-family: var(--font-family-base);
         }
 
-        .theme-toggle:hover, .account-btn:hover, .logout-btn:hover {
+        .theme-toggle:hover, .account-btn:hover {
             background-color: var(--color-bg-hover);
+            color: var(--color-text-primary);
             border-color: var(--color-primary);
         }
 
         .logout-btn {
-            border-color: rgba(220, 53, 69, 0.45);
             color: var(--color-danger);
+            border-color: rgba(220, 38, 38, 0.3);
             justify-content: center;
         }
 
         .logout-btn:hover {
-            background-color: rgba(220, 53, 69, 0.1);
+            background-color: rgba(220, 38, 38, 0.08);
             border-color: var(--color-danger);
         }
 
@@ -227,10 +255,13 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.55);
+            background: rgba(10, 15, 30, 0.65);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            animation: overlayFadeIn 0.2s ease;
         }
         .modal-overlay.open {
             display: flex;
@@ -238,68 +269,83 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         .modal-box {
             background: var(--color-bg-surface);
             border: 1px solid var(--color-border);
-            border-radius: 14px;
+            border-radius: var(--radius-xl);
             padding: 2rem;
             width: 100%;
-            max-width: 460px;
+            max-width: 480px;
             box-shadow: var(--shadow-lg);
             max-height: 90vh;
             overflow-y: auto;
+            animation: modalSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalSlideUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         .modal-box h2 {
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: 700;
             margin-bottom: 1.5rem;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            letter-spacing: -0.02em;
         }
         .modal-section {
             border: 1px solid var(--color-border);
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             padding: 1.25rem;
             margin-bottom: 1rem;
+            transition: border-color var(--transition-base);
+        }
+        .modal-section:focus-within {
+            border-color: var(--color-primary);
         }
         .modal-section h3 {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             margin-bottom: 0.75rem;
             color: var(--color-text-primary);
         }
         .modal-section input {
             width: 100%;
-            padding: 0.6rem 0.85rem;
+            padding: 0.65rem 0.9rem;
             border: 1px solid var(--color-border);
-            border-radius: 8px;
+            border-radius: var(--radius-sm);
             background: var(--color-bg-primary);
             color: var(--color-text-primary);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             margin-bottom: 0.6rem;
             box-sizing: border-box;
+            transition: border-color var(--transition-base), box-shadow var(--transition-base);
+            font-family: var(--font-family-base);
         }
         .modal-section input:focus {
             outline: none;
             border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
         }
         .modal-btn {
             padding: 0.55rem 1.2rem;
             border: none;
-            border-radius: 7px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.875rem;
             font-weight: 600;
-            transition: all 0.2s;
+            transition: all var(--transition-base);
+            font-family: var(--font-family-base);
         }
         .modal-btn-primary {
-            background: var(--color-primary);
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
             color: white;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
         }
-        .modal-btn-primary:hover { background: var(--color-primary-hover); }
+        .modal-btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
         .modal-btn-danger {
             background: var(--color-danger);
             color: white;
         }
-        .modal-btn-danger:hover { opacity: 0.85; }
+        .modal-btn-danger:hover { opacity: 0.85; transform: translateY(-1px); }
         .modal-btn-close {
             background: transparent;
             border: 1px solid var(--color-border);
@@ -324,6 +370,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
             flex: 1;
             overflow-y: auto;
             padding: 2rem;
+            background-color: var(--color-bg-primary);
         }
 
         .content-header {
@@ -331,14 +378,16 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         }
 
         .content-header h1 {
-            font-size: 2rem;
+            font-size: 1.85rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.03em;
+            color: var(--color-text-primary);
         }
 
         .content-header p {
             color: var(--color-text-secondary);
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         #overview .content-header-toolbar {
@@ -366,22 +415,23 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 1.5rem;
+            gap: 1.25rem;
             margin-bottom: 2rem;
         }
 
         .widget {
             background-color: var(--color-bg-surface);
             border: 1px solid var(--color-border);
-            border-radius: 12px;
+            border-radius: var(--radius-lg);
             padding: 1.5rem;
             box-shadow: var(--shadow-sm);
-            transition: all 0.3s ease;
+            transition: box-shadow var(--transition-slow), transform var(--transition-slow), border-color var(--transition-base);
         }
 
         .widget:hover {
             box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            border-color: rgba(79, 70, 229, 0.2);
         }
 
         /* Customize Mode Overlay */
@@ -432,34 +482,37 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         }
 
         .widget-title {
-            font-size: 1.1rem;
-            font-weight: 600;
+            font-size: 1rem;
+            font-weight: 650;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            letter-spacing: -0.01em;
         }
 
         .widget-icon {
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }
 
         .widget-action {
-            background: var(--color-primary, #007bff); /* Nutzt deine Primärfarbe oder ein sattes Blau */
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
             border: none;
-            border-radius: 8px;                    /* Weiche, moderne Kanten */
-            color: white;                          /* Hoher Kontrast für Lesbarkeit */
+            border-radius: var(--radius-sm);
+            color: white;
             cursor: pointer;
-            padding: 0.6rem 1.2rem;                /* Mehr "Klickfläche" */
+            padding: 0.5rem 1rem;
+            font-size: 0.8rem;
             font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Dezenter Schatten für Tiefe */
-            transition: all 0.3s ease;             /* Geschmeidige Übergänge für alle Eigenschaften */
+            font-family: var(--font-family-base);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            transition: all var(--transition-base);
+            letter-spacing: 0.01em;
         }
 
-        /* Interaktion: Was passiert beim Drüberfahren? */
         .widget-action:hover {
-            background: var(--color-primary-dark, #0056b3); 
-            transform: translateY(-2px);           /* Kleiner "Hover-Lift" Effekt */
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            opacity: 0.9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
         }
 
         /* Stundenplan Widget */
@@ -983,12 +1036,14 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
         input[type="text"], input[type="number"], select, textarea {
             flex: 1;
-            padding: 0.75rem;
+            padding: 0.7rem 0.9rem;
             border: 1px solid var(--color-border);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             background-color: var(--color-bg-primary);
             color: var(--color-text-primary);
-            font-size: 0.9rem;
+            font-size: 0.875rem;
+            font-family: var(--font-family-base);
+            transition: border-color var(--transition-base), box-shadow var(--transition-base);
         }
 
         textarea {
@@ -1000,6 +1055,7 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         input:focus, select:focus, textarea:focus {
             outline: none;
             border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
         }
 
         .form-status {
@@ -1009,32 +1065,39 @@ $is_admin = strtolower((string)$user_role) === 'admin';
         }
 
         .btn-primary {
-            padding: 0.75rem 1.5rem;
-            background-color: var(--color-primary);
+            padding: 0.7rem 1.5rem;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            font-weight: 500;
-            transition: all 0.2s;
+            font-weight: 600;
+            font-size: 0.875rem;
+            font-family: var(--font-family-base);
+            transition: all var(--transition-base);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);
         }
 
         .btn-primary:hover {
-            background-color: var(--color-primary-hover);
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
         }
 
         .btn-icon {
-            padding: 0.5rem;
+            padding: 0.45rem 0.6rem;
             background: transparent;
             border: 1px solid var(--color-border);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all var(--transition-base);
+            font-family: var(--font-family-base);
         }
 
         .btn-icon:hover {
             background-color: var(--color-bg-hover);
             border-color: var(--color-primary);
+            transform: scale(1.05);
         }
 
         /* Responsive */
@@ -1360,20 +1423,22 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
         /* Secondary Button */
         .btn-secondary {
-            padding: 0.75rem 1.5rem;
+            padding: 0.7rem 1.5rem;
             background-color: transparent;
             color: var(--color-text-secondary);
             border: 1px solid var(--color-border);
-            border-radius: 6px;
+            border-radius: var(--radius-sm);
             cursor: pointer;
             font-weight: 500;
-            transition: all 0.2s;
+            font-size: 0.875rem;
+            font-family: var(--font-family-base);
+            transition: all var(--transition-base);
         }
 
         .btn-secondary:hover {
             background-color: var(--color-bg-hover);
             color: var(--color-text-primary);
-            border-color: var(--color-text-secondary);
+            border-color: var(--color-primary);
         }
 
         /* Vergangene Klausur */
@@ -1702,20 +1767,40 @@ $is_admin = strtolower((string)$user_role) === 'admin';
 
         /* Scrollbar Styling */
         ::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
+            height: 6px;
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--color-bg-primary);
+            background: transparent;
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--color-border);
-            border-radius: 4px;
+            border-radius: 99px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
             background: var(--color-text-muted);
+        }
+
+        /* Tab Content Fade-In */
+        .tab-view {
+            animation: tabFadeIn 0.25s ease;
+        }
+
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Todo/Grade/File items */
+        .todo-item, .grade-item, .file-item, .message-item {
+            transition: background-color var(--transition-base), transform var(--transition-base);
+        }
+
+        .todo-item:hover, .file-item:hover {
+            transform: translateX(2px);
         }
     </style>
 </head>

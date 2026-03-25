@@ -259,6 +259,119 @@ session_set_cookie_params([
 
 - `bcrypt` als Abhängigkeit eingetragen
 
+---
+
+## Prompt 8 (User)
+überarbeite nun das aussehen des frontends und mache es moderner, ansprechender und smoother. achte darauf dass die funktionsweise vollständig bestehend bleibt
+
+## Ausgabe 8 (Assistant)
+Das Frontend wurde visuell modernisiert, ohne die bestehende Funktionalität zu verändern. Dashboard, Login und Registrierung nutzen jetzt eine konsistente, modernere Designsprache mit weicheren Abständen, überarbeiteten Farben, besseren Hover-States, moderneren Formularen und sanfteren Animationen.
+
+## Aenderungen zu Prompt 8
+
+### 1) Dashboard modernisiert - `current_dashboard.php`
+
+- Farb- und Designsystem auf eine neue Indigo-basierte Oberfläche umgestellt
+  - Primärfarbe auf `#4f46e5`
+  - helles Theme verfeinert (`#f0f4f8`)
+  - dunkles Theme auf tiefere, modernere Töne umgestellt (`#0a0f1e`)
+- Neue Design-Tokens ergänzt:
+  - `--radius-sm/md/lg/xl`
+  - `--transition-fast/base/slow`
+  - `--sidebar-width`
+- Sidebar überarbeitet:
+  - pillenförmige Navigation statt linker Aktiv-Markierung
+  - Gradient für aktive Einträge
+  - weichere Hover-Zustände mit leichter Bewegung
+- Modals verbessert:
+  - Blur-Backdrop
+  - neue Einblendanimation `modalSlideUp`
+  - modernere Buttons und Formularfelder
+- Widgets verbessert:
+  - modernere Radien und Schatten
+  - klarere Hover-Zustände
+  - überarbeitete Aktionsbuttons mit Gradient
+- Formulare und Buttons global geglättet:
+  - stärkere Fokus-Ringe
+  - modernere Buttons mit Schatten und Hover-Lift
+  - dünnere Scrollbars
+- Neue Fade-In-Animation für Tab-Inhalte ergänzt
+
+### 2) Login-Seite modernisiert - `auth/login.php`
+
+- Login-Seite komplett visuell überarbeitet, bei gleicher Login-Logik
+- Neue Gestaltung:
+  - LearnHub-Logo-Bereich mit `LH`-Kachel
+  - modernes Card-Layout mit weichen Radien und Schatten
+  - dekorativer radialer Hintergrund
+  - klarere Typografie und modernisierte Eingabefelder
+  - bessere Fehlermeldungsboxen
+  - Theme-Toggle modernisiert (`🌙 Dark` / `☀️ Light`)
+- Formularfunktion, CSRF-Schutz und Session-Handling unverändert beibehalten
+
+### 3) Registrierungsseite modernisiert - `auth/register.php`
+
+- Registrierung optisch an die neue Login-Seite angepasst
+- Weiterhin vollständig erhalten:
+  - zweistufiger Registrierungsablauf
+  - CSRF-Schutz
+  - Verifizierungslogik
+  - bestehende Feldnamen und POST-Actions
+- Modernisiert wurden:
+  - Card-Layout und Hintergrund
+  - Fortschrittsbalken für Schritt 1 und 2
+  - Eingabefelder, Buttons und Statusmeldungen
+  - Theme-Toggle und Darkmode-Darstellung
+
+---
+
+## Prompt 9 (User)
+so sieht es sehr gut aber bitte ohne extern gehostete fonts
+
+## Ausgabe 9 (Assistant)
+Die extern gehosteten Fonts wurden entfernt. Stattdessen verwenden die modernisierten Seiten jetzt ausschließlich lokale System-Font-Stacks, sodass keine Anfrage mehr an externe Font-Hosts gesendet wird.
+
+## Aenderungen zu Prompt 9
+
+### Entfernte externe Fonts
+
+Dateien:
+- `auth/login.php`
+- `auth/register.php`
+- `current_dashboard.php`
+
+Umgesetzt:
+- Alle `fonts.googleapis.com`- und `fonts.gstatic.com`-Einbindungen entfernt
+- Alle Font-Definitionen auf lokale System-Schriftarten umgestellt:
+  - `-apple-system`
+  - `BlinkMacSystemFont`
+  - `Segoe UI`
+  - `Helvetica Neue`
+  - `Arial`
+  - `sans-serif`
+
+Vorteil:
+- keine externen Font-Requests mehr
+- bessere Datenschutz-Konformität
+- weiterhin modernes Erscheinungsbild ohne funktionale Änderungen
+
+---
+
+## Zusaetzlich geaenderte Dateien (Frontend-Abschnitt)
+- current_dashboard.php
+- auth/login.php
+- auth/register.php
+
+## Validierung / Checks (Frontend-Abschnitt)
+Durchgefuehrte Pruefungen:
+- Problems/Fehlercheck fuer
+  - `current_dashboard.php`
+  - `auth/login.php`
+  - `auth/register.php`
+  - Ergebnis: keine Fehler gemeldet
+- Suche nach externen Font-Referenzen
+  - Ergebnis: keine verbleibenden Treffer fuer `fonts.googleapis.com`, `fonts.gstatic.com` oder `Inter`
+
 ## Geaenderte Dateien (Prompt 7)
 
 | Datei | Änderung |
