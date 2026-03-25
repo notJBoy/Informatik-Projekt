@@ -3,6 +3,22 @@
  * Dateizweck: Endpoint oder Seite "register" im Modul "auth".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
+// Sichere Session-Cookie-Konfiguration vor session_start()
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Strict',
+]);
+session_start();
+
+// CSRF-Token generieren
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Fehlernachricht (falls vorhanden)
 $error_message = '';
 $success_message = '';
@@ -14,6 +30,11 @@ $is_confirm_step = false;
 
 // Wenn das Formular abgesendet wird
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF-Token prüfen
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error_message = 'Ungültige Anfrage. Bitte Seite neu laden und erneut versuchen.';
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } else {
     $action = $_POST['action'] ?? 'request_code';
 
     if ($action === 'request_code') {
@@ -78,6 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $error_message = $json['detail'] ?? 'Verifizierung fehlgeschlagen. Bitte erneut versuchen.';
         }
     }
+    } // Ende CSRF-else
 }
 
 $is_confirm_step = !empty($verification_id);
@@ -347,6 +369,7 @@ $is_confirm_step = !empty($verification_id);
 
         <?php if (!$verification_id): ?>
             <form method="POST" action="register.php" class="register-step">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <input type="hidden" name="action" value="request_code">
                 <input type="text" name="username" class="input-field" placeholder="Benutzername" value="<?php echo htmlspecialchars($username_value); ?>" required>
                 <input type="email" name="email" class="input-field" placeholder="E-Mail" value="<?php echo htmlspecialchars($email_value); ?>" required>
@@ -355,6 +378,7 @@ $is_confirm_step = !empty($verification_id);
             </form>
         <?php else: ?>
             <form method="POST" action="register.php" class="register-step">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <input type="hidden" name="action" value="confirm_code">
                 <input type="hidden" name="verification_id" value="<?php echo htmlspecialchars($verification_id); ?>">
                 <input type="text" name="verification_code" class="input-field" placeholder="Verifizierungscode" required>

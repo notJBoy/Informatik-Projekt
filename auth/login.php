@@ -3,17 +3,36 @@
  * Dateizweck: Endpoint oder Seite "login" im Modul "auth".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
-// Einfache Session-Startung
+// Sichere Session-Cookie-Konfiguration vor session_start()
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Strict',
+]);
 session_start();
 if (isset($_SESSION['user_id'])) {
     header("Location: ../current_dashboard.php");
     exit();
 }
+
+// CSRF-Token generieren
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 // Fehlernachricht (falls vorhanden)
 $error_message = '';
 
 // Wenn das Formular abgesendet wird
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    // CSRF-Token prüfen
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        $error_message = 'Ungültige Anfrage. Bitte Seite neu laden und erneut versuchen.';
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    } else {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
@@ -57,6 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 
     curl_close($ch);
+    } // Ende CSRF-else
 }
 
 
@@ -253,6 +273,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
 
         <form method="POST" action="login.php">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
             <input type="text" name="username" class="input-field" placeholder="Benutzername" required>
             <input type="password" name="password" class="input-field" placeholder="Passwort" required>
             <button type="submit" class="button">Anmelden</button>

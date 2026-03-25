@@ -20,6 +20,7 @@ import smtplib
 import secrets
 import ssl
 import json
+import bcrypt
 from email.message import EmailMessage
 
 UPLOAD_DIR = "uploads"
@@ -423,9 +424,34 @@ init_db()
 # HILFSFUNKTIONEN
 # =========================================
 
+# bcrypt-Kontext für sicheres Passwort-Hashing
+
+
 # Funktion: hash_password - verarbeitet die zugehoerige Backend-Operation.
 def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
+    """Erstellt einen sicheren bcrypt-Hash des Passworts."""
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+
+
+# Funktion: verify_password - prüft Passwort gegen gespeicherten Hash.
+def verify_password(plain_password: str, hashed_password: str, db=None, user_id: str = None) -> bool:
+    """Vergleicht Klartextpasswort mit gespeichertem Hash.
+    Unterstützt Migration von alten SHA-256-Hashes zu bcrypt."""
+    # Bcrypt-Hash erkennen (beginnt mit $2b$, $2a$ oder $2y$)
+    if hashed_password.startswith(("$2b$", "$2a$", "$2y$")):
+        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    # Fallback: SHA-256 für alte Accounts (Migration)
+    old_hash = hashlib.sha256(plain_password.encode()).hexdigest()
+    if old_hash == hashed_password:
+        # Automatische Migration zu bcrypt beim nächsten Login
+        if db is not None and user_id is not None:
+            new_hash = hash_password(plain_password)
+            _cursor = db.cursor()
+            _cursor.execute("UPDATE users SET password=? WHERE id=?", (new_hash, user_id))
+            db.commit()
+        return True
+    return False
 
 
 # Funktion: generate_id - verarbeitet die zugehoerige Backend-Operation.
@@ -885,7 +911,7 @@ def change_password(user_id: str, data: ChangePassword):
     if not user:
         raise HTTPException(status_code=404, detail="User nicht gefunden")
 
-    if user["password"] != hash_password(data.old_password):
+    if not verify_password(data.old_password, user["password"], db, user_id):
         raise HTTPException(status_code=401, detail="Altes Passwort ist falsch")
 
     cursor.execute("""
@@ -1278,7 +1304,7 @@ def login(user: UserLogin):
     """, (user.username,))
     user_db = cursor.fetchone()
 
-    if user_db is None or user_db['password'] != hash_password(user.password):
+    if user_db is None or not verify_password(user.password, user_db['password'], db, user_db['id'] if user_db else None):
         log_login_attempt(db, user.username, False)
         raise HTTPException(status_code=401, detail="Ungültiger Benutzername oder Passwort")
 
@@ -1306,7 +1332,7 @@ def request_delete_account_code(user_id: str, data: DeleteAccountRequest):
     if not user:
         raise HTTPException(status_code=404, detail="User nicht gefunden")
 
-    if user["password"] != hash_password(data.password):
+    if not verify_password(data.password, user["password"], db, user_id):
         raise HTTPException(status_code=401, detail="Passwort ist falsch")
 
     verification_id = create_verification(

@@ -196,3 +196,74 @@ Durchgefuehrte Pruefungen:
   - Ergebnis: Datensaetze vorhanden
 - Syntaxcheck `backend.py` nach finaler `#`-Kommentierung
   - Ergebnis: erfolgreich kompiliert, keine Fehler
+
+---
+
+## Prompt 7 (User)
+füge eine verschlüsselung der übermittelten daten hinzu damit ids, passwörter etc nicht einfach so abgefangen werden können
+
+## Ausgabe 7 (Assistant)
+Folgende Sicherheitsmaßnahmen wurden implementiert:
+
+1. **bcrypt Passwort-Hashing** (`backend.py`): SHA-256 ohne Salt durch bcrypt mit 12 Runden ersetzt. Die neue `verify_password()`-Funktion erkennt alte SHA-256-Hashes und migriert sie automatisch beim nächsten Login auf bcrypt — kein Passwort muss zurückgesetzt werden.
+2. **CSRF-Schutz** (`auth/login.php`, `auth/register.php`): Jede Session erhält ein kryptografisch sicheres 256-Bit-Token. Alle Formulare betten das Token ein; der Server prüft es mit `hash_equals()` (timing-safe).
+3. **Sichere Session-Cookies** (`auth/login.php`, `auth/register.php`): `httponly=true` (kein JS-Zugriff), `samesite=Strict` (CSRF-Schutz), `secure=true` (nur über HTTPS).
+4. **`requirements.txt`** aktualisiert: `bcrypt` als direkte Abhängigkeit eingetragen.
+
+## Aenderungen zu Prompt 7
+
+### 1) Passwort-Hashing — `backend.py`
+
+- `import bcrypt` hinzugefügt
+- `hash_password()` auf bcrypt (12 Runden) umgestellt:
+  ```python
+  def hash_password(password: str) -> str:
+      salt = bcrypt.gensalt(rounds=12)
+      return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+  ```
+- Neue Funktion `verify_password()` mit automatischer SHA-256 → bcrypt Migration:
+  - Erkennt bcrypt-Hashes (`$2b$`, `$2a$`, `$2y$`), prüft direkt
+  - Erkennt alte SHA-256-Hashes, prüft und migriert beim nächsten Login
+- `verify_password()` genutzt in:
+  - Login: `/auth/login`
+  - Passwort-Änderung: `/auth/change-password/{user_id}`
+  - Account-Löschung: `/auth/delete-account/request-code/{user_id}`
+
+### 2) CSRF-Schutz — `auth/login.php`, `auth/register.php`
+
+- Vor `session_start()`: `session_set_cookie_params()` mit sicheren Flags
+- CSRF-Token-Generierung beim ersten Seitenaufruf:
+  ```php
+  if (empty($_SESSION['csrf_token'])) {
+      $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+  }
+  ```
+- Im POST-Handler: Token-Prüfung mit `hash_equals()` (timing-safe)
+- Bei ungültigem Token: Fehlermeldung + Token-Rotation
+- In jedem Formular: `<input type="hidden" name="csrf_token" value="...">`
+
+### 3) Sichere Session-Cookies — `auth/login.php`, `auth/register.php`
+
+```php
+session_set_cookie_params([
+    'lifetime' => 0,
+    'path'     => '/',
+    'domain'   => '',
+    'secure'   => isset($_SERVER['HTTPS']),
+    'httponly' => true,
+    'samesite' => 'Strict',
+]);
+```
+
+### 4) `requirements.txt`
+
+- `bcrypt` als Abhängigkeit eingetragen
+
+## Geaenderte Dateien (Prompt 7)
+
+| Datei | Änderung |
+|---|---|
+| `backend.py` | `import bcrypt`; `hash_password()` auf bcrypt; `verify_password()` neu; 3 Stellen auf `verify_password()` umgestellt |
+| `auth/login.php` | Sichere Cookie-Parameter, CSRF-Token-Generierung/Prüfung, Hidden-Input im Formular |
+| `auth/register.php` | Sichere Cookie-Parameter, CSRF-Token in beiden Formularen (Registrierung + Code-Bestätigung) |
+| `requirements.txt` | `bcrypt` hinzugefügt |
