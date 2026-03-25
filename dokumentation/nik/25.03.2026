@@ -172,8 +172,6 @@ Datei: `backend.py`
 
 ---
 
----
-
 ## Prompt 7 (User)
 aendere das passwort von dem benutzer nik auf 123A456B789C!
 
@@ -316,10 +314,10 @@ Durchgefuehrte Pruefungen:
 
 ---
 
-## Prompt 7 (User)
+## Prompt 12 (User)
 füge eine verschlüsselung der übermittelten daten hinzu damit ids, passwörter etc nicht einfach so abgefangen werden können
 
-## Ausgabe 7 (Assistant)
+## Ausgabe 12 (Assistant)
 Folgende Sicherheitsmaßnahmen wurden implementiert:
 
 1. **bcrypt Passwort-Hashing** (`backend.py`): SHA-256 ohne Salt durch bcrypt mit 12 Runden ersetzt. Die neue `verify_password()`-Funktion erkennt alte SHA-256-Hashes und migriert sie automatisch beim nächsten Login auf bcrypt — kein Passwort muss zurückgesetzt werden.
@@ -327,9 +325,7 @@ Folgende Sicherheitsmaßnahmen wurden implementiert:
 3. **Sichere Session-Cookies** (`auth/login.php`, `auth/register.php`): `httponly=true` (kein JS-Zugriff), `samesite=Strict` (CSRF-Schutz), `secure=true` (nur über HTTPS).
 4. **`requirements.txt`** aktualisiert: `bcrypt` als direkte Abhängigkeit eingetragen.
 
-## Aenderungen zu Prompt 7
-
-### 1) Passwort-Hashing — `backend.py`
+## Aenderungen zu Prompt 12
 
 - `import bcrypt` hinzugefügt
 - `hash_password()` auf bcrypt (12 Runden) umgestellt:
@@ -378,15 +374,10 @@ session_set_cookie_params([
 
 ---
 
-## Prompt 8 (User)
+## Prompt 13 (User)
 überarbeite nun das aussehen des frontends und mache es moderner, ansprechender und smoother. achte darauf dass die funktionsweise vollständig bestehend bleibt
 
-## Ausgabe 8 (Assistant)
-Das Frontend wurde visuell modernisiert, ohne die bestehende Funktionalität zu verändern. Dashboard, Login und Registrierung nutzen jetzt eine konsistente, modernere Designsprache mit weicheren Abständen, überarbeiteten Farben, besseren Hover-States, moderneren Formularen und sanfteren Animationen.
-
-## Aenderungen zu Prompt 8
-
-### 1) Dashboard modernisiert - `current_dashboard.php`
+## Ausgabe 13 (Assistant)
 
 - Farb- und Designsystem auf eine neue Indigo-basierte Oberfläche umgestellt
   - Primärfarbe auf `#4f46e5`
@@ -442,13 +433,10 @@ Das Frontend wurde visuell modernisiert, ohne die bestehende Funktionalität zu 
 
 ---
 
-## Prompt 9 (User)
+## Prompt 14 (User)
 so sieht es sehr gut aber bitte ohne extern gehostete fonts
 
-## Ausgabe 9 (Assistant)
-Die extern gehosteten Fonts wurden entfernt. Stattdessen verwenden die modernisierten Seiten jetzt ausschließlich lokale System-Font-Stacks, sodass keine Anfrage mehr an externe Font-Hosts gesendet wird.
-
-## Aenderungen zu Prompt 9
+## Ausgabe 14 (Assistant)
 
 ### Entfernte externe Fonts
 
@@ -489,7 +477,7 @@ Durchgefuehrte Pruefungen:
 - Suche nach externen Font-Referenzen
   - Ergebnis: keine verbleibenden Treffer fuer `fonts.googleapis.com`, `fonts.gstatic.com` oder `Inter`
 
-## Geaenderte Dateien (Prompt 7)
+## Geaenderte Dateien (Prompt 12)
 
 | Datei | Änderung |
 |---|---|
