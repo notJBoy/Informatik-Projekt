@@ -4,7 +4,7 @@
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
 // Dateien vom Backend laden (benötigt $user_id aus der Session, gesetzt in current_dashboard.php)
-$backend_url = "http://127.0.0.1:8000/files/$user_id";
+$backend_url = BACKEND_BASE_URL . "/files/$user_id";
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $backend_url);

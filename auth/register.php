@@ -14,6 +14,7 @@ session_set_cookie_params([
 ]);
 session_start();
 require_once __DIR__ . '/../includes/i18n.php';
+require_once __DIR__ . '/../includes/api_helper.php';
 
 if (isset($_GET['lang'])) {
     learnhub_set_locale($_GET['lang']);
@@ -52,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $username_value = $username;
         $email_value = $email;
 
-        $url = 'http://localhost:8000/auth/register';
+        $url = BACKEND_BASE_URL . '/auth/register';
         $data = json_encode([
             'username' => $username,
             'email' => $email,
@@ -80,7 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $verification_id = trim($_POST['verification_id'] ?? '');
         $code = trim($_POST['verification_code'] ?? '');
 
-        $url = 'http://localhost:8000/auth/register/confirm';
+        $url = BACKEND_BASE_URL . '/auth/register/confirm';
         $data = json_encode([
             'verification_id' => $verification_id,
             'code' => $code

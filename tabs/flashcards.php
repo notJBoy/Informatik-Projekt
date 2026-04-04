@@ -666,7 +666,7 @@ async function fcCreateDeck() {
     var subject = document.getElementById('fc-new-subject').value.trim();
     var description = document.getElementById('fc-new-desc').value.trim();
     var isPublic = document.getElementById('fc-new-public').checked;
-    if (!name) { alert(I18N.enterDeckName); return; }
+    if (!name) { showToast(I18N.enterDeckName, 'warning'); return; }
     try {
         var res = await fetch('flashcards/deck_create.php', {
             method: 'POST',
@@ -682,9 +682,9 @@ async function fcCreateDeck() {
             await fcLoadDecks();
         } else {
             var err = await res.json();
-            alert(err.detail || I18N.createDeckError);
+            showToast(err.detail || I18N.createDeckError, 'error');
         }
-    } catch(e) { alert(I18N.serverUnreachable); }
+    } catch(e) { showToast(I18N.serverUnreachable, 'error'); }
 }
 
 // ---- Open a Deck ----
@@ -750,7 +750,7 @@ function fcRenderCards() {
 async function fcAddCard() {
     var front = document.getElementById('fc-card-front').value.trim();
     var back = document.getElementById('fc-card-back').value.trim();
-    if (!front || !back) { alert(I18N.fcEnterFrontBack); return; }
+    if (!front || !back) { showToast(I18N.fcEnterFrontBack, 'warning'); return; }
     if (!fcCurrentDeck) return;
     try {
         var res = await fetch('flashcards/card_add.php?deck_id=' + encodeURIComponent(fcCurrentDeck.id), {
@@ -764,9 +764,9 @@ async function fcAddCard() {
             await fcLoadCards();
         } else {
             var err = await res.json();
-            alert(err.detail || I18N.errorGeneric);
+            showToast(err.detail || I18N.errorGeneric, 'error');
         }
-    } catch(e) { alert(I18N.serverUnreachable); }
+    } catch(e) { showToast(I18N.serverUnreachable, 'error'); }
 }
 
 async function fcDeleteCard(cardId) {
@@ -777,7 +777,7 @@ async function fcDeleteCard(cardId) {
             fcCurrentCards = fcCurrentCards.filter(function(c) { return c.id !== cardId; });
             fcRenderCards();
         }
-    } catch(e) { alert(I18N.serverUnreachable); }
+    } catch(e) { showToast(I18N.serverUnreachable, 'error'); }
 }
 
 async function fcDeleteCurrentDeck() {
@@ -798,9 +798,9 @@ async function fcDeleteDeckById(deckId) {
                 renderOverviewFlashcards();
             }
         } else {
-            alert(I18N.deleteError);
+            showToast(I18N.deleteError, 'error');
         }
-    } catch(e) { alert(I18N.serverUnreachable); }
+    } catch(e) { showToast(I18N.serverUnreachable, 'error'); }
 }
 
 async function fcToggleDeckPublic() {
@@ -818,7 +818,7 @@ async function fcToggleDeckPublic() {
             var deckInList = fcAllDecks.find(function(d) { return d.id === fcCurrentDeck.id; });
             if (deckInList) deckInList.public = newPublic;
         }
-    } catch(e) { alert(I18N.serverUnreachable); }
+    } catch(e) { showToast(I18N.serverUnreachable, 'error'); }
 }
 
 // ---- Study Mode ----
@@ -935,13 +935,13 @@ async function fcCopyDeck(deckId, deckName) {
     try {
         var res = await fetch('flashcards/deck_copy.php?deck_id=' + encodeURIComponent(deckId), { method: 'POST' });
         if (res.ok) {
-            alert(i18nFormat(I18N.copySuccess, {name: deckName}));
+            showToast(i18nFormat(I18N.copySuccess, {name: deckName}), 'success');
             await fcLoadDecks();
         } else {
             var err = await res.json();
-            alert(err.detail || I18N.copyError);
+            showToast(err.detail || I18N.copyError, 'error');
         }
-    } catch(e) { alert(I18N.serverUnreachable); }
+    } catch(e) { showToast(I18N.serverUnreachable, 'error'); }
 }
 
 // ---- HTML escaping ----

@@ -6,6 +6,7 @@
 session_start();
 
 require_once __DIR__ . '/includes/i18n.php';
+require_once __DIR__ . '/includes/api_helper.php';
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: auth/login.php");
@@ -869,6 +870,7 @@ $current_locale = learnhub_get_locale();
             display: flex;
             flex-direction: column;
             gap: 0.5rem;
+            overflow: hidden;
         }
 
         .file-item {
@@ -880,6 +882,7 @@ $current_locale = learnhub_get_locale();
             border-radius: 8px;
             transition: all 0.2s;
             cursor: pointer;
+            min-width: 0;
         }
 
         .file-item:hover {
@@ -888,15 +891,20 @@ $current_locale = learnhub_get_locale();
 
         .file-icon {
             font-size: 1.5rem;
+            flex-shrink: 0;
         }
 
         .file-info {
             flex: 1;
+            min-width: 0;
         }
 
         .file-name {
             font-weight: 500;
             font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .file-meta {
@@ -1123,24 +1131,116 @@ $current_locale = learnhub_get_locale();
         }
 
         /* Responsive */
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1001;
+            width: 44px;
+            height: 44px;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            background: var(--color-bg-surface);
+            color: var(--color-text-primary);
+            font-size: 1.4rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-md);
+            transition: background var(--transition-base);
+        }
+        .mobile-menu-btn:hover {
+            background: var(--color-bg-hover);
+        }
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 999;
+            animation: overlayFadeIn 0.2s ease;
+        }
+        .sidebar-overlay.open { display: block; }
+
         @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+            }
+
             .sidebar {
                 position: fixed;
-                left: -260px;
+                left: 0;
+                top: 0;
                 z-index: 1000;
                 height: 100vh;
+                transform: translateX(-100%);
             }
 
             .sidebar.open {
-                transform: translateX(260px);
+                transform: translateX(0);
+            }
+
+            .main-content {
+                padding: 1rem;
+                padding-top: 4rem;
             }
 
             .dashboard-grid {
                 grid-template-columns: 1fr;
             }
 
+            .content-header h1 {
+                font-size: 1.4rem;
+            }
+
+            .input-group {
+                flex-direction: column;
+            }
+
+            .modal-box {
+                margin: 0.75rem;
+                max-width: calc(100vw - 1.5rem);
+                max-height: calc(100vh - 1.5rem);
+            }
+
             #overview .overview-customize-btn {
                 width: 100%;
+            }
+
+            .widget {
+                padding: 1rem;
+            }
+
+            .btn-icon {
+                min-width: 44px;
+                min-height: 44px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 0.75rem;
+                padding-top: 3.5rem;
+            }
+
+            .content-header h1 {
+                font-size: 1.2rem;
+            }
+
+            .widget-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .grade-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
             }
         }
 
@@ -1824,10 +1924,161 @@ $current_locale = learnhub_get_locale();
         .todo-item:hover, .file-item:hover {
             transform: translateX(2px);
         }
+
+        /* ===== Toast Notification System ===== */
+        .toast-container {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column-reverse;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            min-width: 280px;
+            max-width: 420px;
+            padding: 0.85rem 1.1rem;
+            border-radius: var(--radius-md);
+            background: var(--color-bg-surface);
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow-lg);
+            font-size: 0.875rem;
+            color: var(--color-text-primary);
+            animation: toastSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+        .toast.toast-removing {
+            opacity: 0;
+            transform: translateX(30px);
+        }
+        .toast-icon {
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .toast-message {
+            flex: 1;
+            line-height: 1.4;
+        }
+        .toast-close {
+            background: none;
+            border: none;
+            color: var(--color-text-muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0.2rem;
+            border-radius: 4px;
+            transition: color 0.15s, background 0.15s;
+            flex-shrink: 0;
+        }
+        .toast-close:hover {
+            color: var(--color-text-primary);
+            background: var(--color-bg-hover);
+        }
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            animation: toastProgress var(--toast-duration, 4s) linear forwards;
+        }
+        .toast.toast-success { border-left: 4px solid var(--color-success); }
+        .toast.toast-success .toast-progress { background: var(--color-success); }
+        .toast.toast-error   { border-left: 4px solid var(--color-danger); }
+        .toast.toast-error .toast-progress   { background: var(--color-danger); }
+        .toast.toast-warning { border-left: 4px solid var(--color-warning); }
+        .toast.toast-warning .toast-progress { background: var(--color-warning); }
+        .toast.toast-info    { border-left: 4px solid var(--color-info); }
+        .toast.toast-info .toast-progress    { background: var(--color-info); }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(40px) scale(0.95); }
+            to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes toastProgress {
+            from { width: 100%; }
+            to   { width: 0%; }
+        }
+
+        /* ===== Empty State ===== */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            color: var(--color-text-muted);
+        }
+        .empty-state-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            opacity: 0.7;
+        }
+        .empty-state-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.35rem;
+        }
+        .empty-state-text {
+            font-size: 0.85rem;
+            max-width: 280px;
+            line-height: 1.5;
+        }
+
+        /* ===== Loading Spinner ===== */
+        .loading-spinner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            gap: 0.75rem;
+            color: var(--color-text-muted);
+        }
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--color-border);
+            border-top-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .loading-spinner span {
+            font-size: 0.85rem;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .toast-container {
+                left: 1rem;
+                right: 1rem;
+                bottom: 1rem;
+            }
+            .toast {
+                min-width: unset;
+                max-width: none;
+            }
+        }
     </style>
 </head>
 <body>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
     <div class="app-container">
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Menü öffnen">☰</button>
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -2044,6 +2295,35 @@ $current_locale = learnhub_get_locale();
     </div>
 
     <script>
+        // ===== Toast Notification System =====
+        function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.style.setProperty('--toast-duration', duration + 'ms');
+            toast.style.position = 'relative';
+            toast.style.overflow = 'hidden';
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type] || icons.info}</span>
+                <span class="toast-message">${message.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>
+                <button class="toast-close" aria-label="Schließen">&times;</button>
+                <div class="toast-progress"></div>
+            `;
+            toast.querySelector('.toast-close').addEventListener('click', () => removeToast(toast));
+            container.appendChild(toast);
+            const timer = setTimeout(() => removeToast(toast), duration);
+            toast._timer = timer;
+        }
+        function removeToast(toast) {
+            if (toast._removed) return;
+            toast._removed = true;
+            clearTimeout(toast._timer);
+            toast.classList.add('toast-removing');
+            setTimeout(() => toast.remove(), 260);
+        }
+
         // Theme Toggle
         // Theme Toggle (mit localStorage)
 const themeToggle = document.getElementById('themeToggle');
@@ -2078,6 +2358,21 @@ themeToggle.addEventListener('click', () => {
         // Navigation
         const navItems = document.querySelectorAll('.nav-item');
         const viewContents = document.querySelectorAll('.view-content');
+
+        // Mobile sidebar
+        (function() {
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            function openSidebar() { sidebar.classList.add('open'); overlay.classList.add('open'); }
+            function closeSidebar() { sidebar.classList.remove('open'); overlay.classList.remove('open'); }
+            if (menuBtn) menuBtn.addEventListener('click', () => sidebar.classList.contains('open') ? closeSidebar() : openSidebar());
+            if (overlay) overlay.addEventListener('click', closeSidebar);
+            // Close sidebar when a nav item is clicked on mobile
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => { if (window.innerWidth <= 768) closeSidebar(); });
+            });
+        })();
 
         function mapTabParamToView(tabParam) {
             if (!tabParam) return 'overview';
@@ -2294,7 +2589,7 @@ themeToggle.addEventListener('click', () => {
             if (!list) return;
 
             if (todosData === null) {
-                list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1.5rem;">Lädt…</p>';
+                list.innerHTML = '<div class="loading-spinner"><div class="spinner"></div><span>Lädt…</span></div>';
                 return;
             }
 
@@ -2303,8 +2598,17 @@ themeToggle.addEventListener('click', () => {
             if (todoFilter === 'done') filtered = todosData.filter(t =>  t.done);
 
             if (!filtered.length) {
-                const msg = todoFilter === 'done' ? 'Noch nichts erledigt.' : 'Keine Aufgaben &#x2014; super! 🎉';
-                list.innerHTML = `<p style="color:var(--color-text-muted);text-align:center;padding:1.5rem;">${msg}</p>`;
+                const msgs = {
+                    done: { icon: '📋', title: 'Noch nichts erledigt', text: 'Erledigte Aufgaben erscheinen hier.' },
+                    open: { icon: '🎉', title: 'Alles erledigt!', text: 'Super, keine offenen Aufgaben mehr.' },
+                    all:  { icon: '✅', title: 'Keine Aufgaben', text: 'Erstelle deine erste Aufgabe oben.' }
+                };
+                const m = msgs[todoFilter] || msgs.all;
+                list.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-icon">${m.icon}</div>
+                    <div class="empty-state-title">${m.title}</div>
+                    <div class="empty-state-text">${m.text}</div>
+                </div>`;
                 return;
             }
 
@@ -2325,7 +2629,7 @@ themeToggle.addEventListener('click', () => {
                         </div>
                     </div>
                     <div class="todo-priority priority-${todo.priority}" title="${getPriorityLabel(todo.priority)}"></div>
-                    <button class="btn-icon" onclick="deleteTodoById('${escapeHtml(todo.id)}')" title="Löschen">🗑️</button>
+                    <button class="btn-icon" onclick="deleteTodoById('${escapeHtml(todo.id)}')" title="Löschen" aria-label="Aufgabe löschen">🗑️</button>
                 </div>
             `).join('');
         }
@@ -2621,6 +2925,7 @@ themeToggle.addEventListener('click', () => {
         };
 
         const CURRENT_USER_ID = "<?php echo htmlspecialchars($_SESSION['user_id']); ?>";
+        const BACKEND_URL = "<?php echo defined('BACKEND_BASE_URL') ? BACKEND_BASE_URL : 'http://localhost:8000'; ?>";
 
         function getScopedStorageKey(baseKey) {
             return `${baseKey}_${CURRENT_USER_ID}`;
@@ -3587,18 +3892,18 @@ themeToggle.addEventListener('click', () => {
             const descInput = document.getElementById('examGradeDescription');
             
             if (!examIdInput.value || !subjectInput.value || !valueInput.value) {
-                alert('Bitte Fach und Punkte ausfüllen');
+                showToast('Bitte Fach und Punkte ausfüllen', 'warning');
                 return;
             }
 
             const value = parseFloat(valueInput.value);
             const weight = parseFloat(weightInput.value);
             if (isNaN(value) || value < 0 || value > 15) {
-                alert('Punkte müssen zwischen 0 und 15 liegen');
+                showToast('Punkte müssen zwischen 0 und 15 liegen', 'warning');
                 return;
             }
             if (isNaN(weight) || weight <= 0) {
-                alert('Gewichtung muss > 0 sein');
+                showToast('Gewichtung muss > 0 sein', 'warning');
                 return;
             }
 
@@ -3622,7 +3927,7 @@ themeToggle.addEventListener('click', () => {
                 if (typeof loadGrades === 'function') loadGrades();
             } catch (err) {
                 console.error('Note konnte nicht gespeichert werden', err);
-                alert('Fehler beim Speichern der Note');
+                showToast('Fehler beim Speichern der Note', 'error');
             }
         }
 
@@ -3630,7 +3935,11 @@ themeToggle.addEventListener('click', () => {
             const list = document.getElementById('examsList');
             if (!list) return;
             if (!exams.length) {
-                list.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">Keine Klassenarbeiten eingetragen</p>';
+                list.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-icon">📝</div>
+                    <div class="empty-state-title">Keine Klassenarbeiten</div>
+                    <div class="empty-state-text">Trage oben deine nächste Klassenarbeit ein.</div>
+                </div>`;
                 return;
             }
             const today = new Date();
@@ -4744,7 +5053,7 @@ themeToggle.addEventListener('click', () => {
             if (!container) return;
             container.innerHTML = '<p style="color:var(--color-text-muted);text-align:center;padding:0.5rem;">Lädt…</p>';
             try {
-                const res = await fetch(`http://localhost:8000/files/${CURRENT_USER_ID}`);
+                const res = await fetch('files/files_load.php');
                 if (!res.ok) throw new Error();
                 const files = await res.json();
                 if (!files.length) {
@@ -5073,12 +5382,12 @@ themeToggle.addEventListener('click', () => {
                 return;
             }
             if (!!startTime !== !!endTime) {
-                alert('Bitte beide Zeiten angeben oder beide leer lassen.');
+                showToast('Bitte beide Zeiten angeben oder beide leer lassen.', 'warning');
                 if (startTimeEl) startTimeEl.focus();
                 return;
             }
             if (startTime && endTime && endTime <= startTime) {
-                alert('Die Endzeit muss nach der Startzeit liegen.');
+                showToast('Die Endzeit muss nach der Startzeit liegen.', 'warning');
                 if (endTimeEl) endTimeEl.focus();
                 return;
             }
@@ -5237,7 +5546,7 @@ themeToggle.addEventListener('click', () => {
             const val = document.getElementById('newUsername').value.trim();
             if (!val) return setMsg('msgUsername', I18N.enterUsername, 'error');
             try {
-                const res = await fetch(`http://localhost:8000/auth/change-username/${CURRENT_USER_ID}`, {
+                const res = await fetch(`${BACKEND_URL}/auth/change-username/${CURRENT_USER_ID}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ new_username: val })
@@ -5260,7 +5569,7 @@ themeToggle.addEventListener('click', () => {
             if (newPw !== newPw2) return setMsg('msgPassword', '❌ ' + I18N.passwordMismatch, 'error');
             if (newPw.length < 6) return setMsg('msgPassword', '❌ ' + I18N.passwordMinLength, 'error');
             try {
-                const res = await fetch(`http://localhost:8000/auth/change-password/${CURRENT_USER_ID}`, {
+                const res = await fetch(`${BACKEND_URL}/auth/change-password/${CURRENT_USER_ID}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ old_password: oldPw, new_password: newPw })
@@ -5281,7 +5590,7 @@ themeToggle.addEventListener('click', () => {
             const val = document.getElementById('newEmail').value.trim();
             if (!val || !val.includes('@')) return setMsg('msgEmail', I18N.enterValidEmail, 'error');
             try {
-                const res = await fetch(`http://localhost:8000/auth/change-email/${CURRENT_USER_ID}`, {
+                const res = await fetch(`${BACKEND_URL}/auth/change-email/${CURRENT_USER_ID}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ new_email: val })
@@ -5301,7 +5610,7 @@ themeToggle.addEventListener('click', () => {
             if (!emailChangeVerificationId) return setMsg('msgEmail', I18N.sendCodeFirst, 'error');
             if (!code) return setMsg('msgEmail', I18N.enterVerificationCode, 'error');
             try {
-                const res = await fetch(`http://localhost:8000/auth/change-email/confirm/${CURRENT_USER_ID}`, {
+                const res = await fetch(`${BACKEND_URL}/auth/change-email/confirm/${CURRENT_USER_ID}`, {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ verification_id: emailChangeVerificationId, code: code })
@@ -5322,7 +5631,7 @@ themeToggle.addEventListener('click', () => {
             const pw = document.getElementById('deletePassword').value;
             if (!pw) return setMsg('msgDelete', I18N.enterPassword, 'error');
             try {
-                const res = await fetch(`http://localhost:8000/auth/delete-account/request-code/${CURRENT_USER_ID}`, {
+                const res = await fetch(`${BACKEND_URL}/auth/delete-account/request-code/${CURRENT_USER_ID}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ password: pw })
@@ -5343,15 +5652,15 @@ themeToggle.addEventListener('click', () => {
             if (!code) return setMsg('msgDelete', I18N.enterVerificationCode, 'error');
             if (!confirm(I18N.confirmDeleteAccount)) return;
             try {
-                const res = await fetch(`http://localhost:8000/auth/delete-account/confirm/${CURRENT_USER_ID}`, {
+                const res = await fetch(`${BACKEND_URL}/auth/delete-account/confirm/${CURRENT_USER_ID}`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ verification_id: deleteAccountVerificationId, code: code })
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(I18N.accountDeletedLogout);
-                    window.location.href = 'auth/logout.php';
+                    showToast(I18N.accountDeletedLogout, 'success');
+                    setTimeout(() => { window.location.href = 'auth/logout.php'; }, 1500);
                 } else {
                     setMsg('msgDelete', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
                 }
@@ -5381,13 +5690,20 @@ themeToggle.addEventListener('click', () => {
                 const res = await fetch('grades/grades_load.php');
                 if (!res.ok) {
                     console.error('Fehler beim Laden der Noten, Status', res.status);
-                    list.innerHTML = `<p style="color:red;text-align:center;padding:1rem;">${escapeHtml(I18N.loadGradesError)}</p>`;
+                    list.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-icon">❌</div>
+                    <div class="empty-state-title">${escapeHtml(I18N.loadGradesError)}</div>
+                </div>`;
                     return;
                 }
                 const grades = await res.json();
                 gradesData = grades; // Global speichern für Dropdown-Statistiken
                 if (!grades.length) {
-                    list.innerHTML = `<p style="color:var(--color-text-muted);text-align:center;padding:1rem;">${escapeHtml(I18N.noGrades)}</p>`;
+                    list.innerHTML = `<div class="empty-state">
+                    <div class="empty-state-icon">📊</div>
+                    <div class="empty-state-title">${escapeHtml(I18N.noGrades)}</div>
+                    <div class="empty-state-text">Füge oben deine erste Note hinzu.</div>
+                </div>`;
                     return;
                 }
 
@@ -5460,11 +5776,11 @@ themeToggle.addEventListener('click', () => {
                     loadGrades();
                 } else {
                     console.error('Fehler beim Speichern der Note, Status', res.status);
-                    alert(I18N.saveGradesError);
+                    showToast(I18N.saveGradesError, 'error');
                 }
             } catch (err) {
                 console.error('Netzwerkfehler beim Speichern der Note', err);
-                alert(I18N.serverBackendHint);
+                showToast(I18N.serverBackendHint, 'error');
             }
         }
 
@@ -5609,11 +5925,11 @@ themeToggle.addEventListener('click', () => {
                     populateSubjectDropdowns();
                 } else {
                     console.error('Fehler beim Speichern des Fachs, Status', res.status);
-                    alert(I18N.saveGradesError);
+                    showToast(I18N.saveGradesError, 'error');
                 }
             } catch (err) {
                 console.error('Netzwerkfehler beim Speichern des Fachs', err);
-                alert(I18N.serverBackendHint);
+                showToast(I18N.serverBackendHint, 'error');
             }
         }
 
@@ -5825,6 +6141,24 @@ themeToggle.addEventListener('click', () => {
                 if (current) dd.value = current;
             });
         }
+
+        // ===== Global Keyboard Shortcuts =====
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                // Close all open modals
+                document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+                // Close modals that use display:flex
+                ['detailsModal', 'colorModal', 'examGradeModal', 'calendarDeleteModal'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el && (el.style.display === 'flex' || el.style.display === 'block')) el.style.display = 'none';
+                });
+                // Close mobile sidebar
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar) sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('open');
+            }
+        });
     </script>
 </body>
 </html>

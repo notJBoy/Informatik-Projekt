@@ -38,7 +38,7 @@
                             </div>
                         </div>
                         <div class="todo-list" id="todosDetailList" style="margin-top: 1rem; max-height: none; overflow: visible;">
-                            <p style="color:var(--color-text-muted);text-align:center;padding:1.5rem;"><?php echo htmlspecialchars(t('common.loading')); ?></p>
+                            <div class="loading-spinner"><div class="spinner"></div><span><?php echo htmlspecialchars(t('common.loading')); ?></span></div>
                         </div>
                     </div>
                 </div>

@@ -3,26 +3,26 @@
  * Dateizweck: Endpoint oder Seite "upload" im Modul "files".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
-session_start();
+require_once __DIR__ . '/../includes/api_helper.php';
 
 $filesTabRedirect = "Location: ../current_dashboard.php?tab=dateien";
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
+$user_id = require_auth();
 
 if (!isset($_FILES['file'])) {
     header($filesTabRedirect . "&upload=error");
     exit();
 }
 
-$subject = $_POST['subject'];
+$subject = trim($_POST['subject'] ?? '');
+if ($subject === '') {
+    header($filesTabRedirect . "&upload=error");
+    exit();
+}
+
 $file = $_FILES['file'];
 
-$backend_url = "http://127.0.0.1:8000/files/upload/$user_id";
+$backend_url = BACKEND_BASE_URL . "/files/upload/$user_id";
 
 $ch = curl_init();
 

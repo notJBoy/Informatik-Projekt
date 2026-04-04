@@ -3,34 +3,16 @@
  * Dateizweck: Endpoint oder Seite "todo_delete" im Modul "todos".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
-session_start();
+require_once __DIR__ . '/../includes/api_helper.php';
 
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(["error" => "Nicht eingeloggt"]);
-    exit();
-}
+$user_id = require_auth();
 
 if (!isset($_GET['todo_id'])) {
     http_response_code(400);
+    header('Content-Type: application/json');
     echo json_encode(["error" => "todo_id fehlt"]);
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
 $todo_id = $_GET['todo_id'];
-$backend_url = "http://127.0.0.1:8000/todos/$user_id/$todo_id";
-
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $backend_url);
-curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-http_response_code($httpCode);
-header('Content-Type: application/json');
-echo $response;
-exit();
+backend_request('DELETE', "/todos/$user_id/$todo_id");

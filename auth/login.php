@@ -14,6 +14,7 @@ session_set_cookie_params([
 ]);
 session_start();
 require_once __DIR__ . '/../includes/i18n.php';
+require_once __DIR__ . '/../includes/api_helper.php';
 
 if (isset($_GET['lang'])) {
     learnhub_set_locale($_GET['lang']);
@@ -44,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $password = $_POST['password'];
 
     // API-Endpunkt für Login
-    $url = 'http://localhost:8000/auth/login';
+    $url = BACKEND_BASE_URL . '/auth/login';
 
     // POST-Daten vorbereiten
     $data = json_encode([
@@ -67,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $responseData = json_decode($response, true);
 
         if ($http_code == 200) {
+            session_regenerate_id(true);
             $_SESSION['user_id'] = $responseData['user_id'] ?? '';
             $_SESSION['username'] = $responseData['username'] ?? '';
             $_SESSION['role'] = $responseData['role'] ?? 'user';

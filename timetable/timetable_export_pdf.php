@@ -2,16 +2,10 @@
 /**
  * Exportiert den Stundenplan des eingeloggten Nutzers als einfache PDF-Datei.
  */
-session_start();
+require_once __DIR__ . '/../includes/api_helper.php';
 
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo "Nicht eingeloggt";
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
-$backend_url = "http://127.0.0.1:8000/timetable/$user_id";
+$user_id = require_auth();
+$backend_url = BACKEND_BASE_URL . "/timetable/$user_id";
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $backend_url);

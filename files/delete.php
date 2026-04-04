@@ -3,32 +3,29 @@
  * Dateizweck: Endpoint oder Seite "delete" im Modul "files".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
-session_start();
+require_once __DIR__ . '/../includes/api_helper.php';
 
 $filesTabRedirect = "Location: ../current_dashboard.php?tab=dateien";
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit();
-}
+$user_id = require_auth();
 
 if (!isset($_GET['file_id'])) {
     header($filesTabRedirect . "&delete=error");
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
 $file_id = $_GET['file_id'];
 
-$backend_url = "http://127.0.0.1:8000/files/$user_id/$file_id";
+$backend_url = BACKEND_BASE_URL . "/files/$user_id/$file_id";
 
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $backend_url);
 curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
 $response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if ($response === false) {
     curl_close($ch);
@@ -37,13 +34,5 @@ if ($response === false) {
 }
 
 curl_close($ch);
-
-/*
-WICHTIG:
-DELETE gibt oft 204 zurück → response leer
-Das ist trotzdem Erfolg!
-*/
-
 header($filesTabRedirect . "&delete=success");
-
 exit();

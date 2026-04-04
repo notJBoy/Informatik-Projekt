@@ -8,7 +8,7 @@
 from fastapi import UploadFile, File, Form
 from fastapi.responses import FileResponse
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import List, Optional
 from datetime import datetime, timedelta
 import sqlite3
@@ -64,9 +64,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],              # Alternativ: ["http://localhost:8080"]
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["http://localhost:8080", "http://127.0.0.1:8080"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 DB_NAME = "learnhub.db"
@@ -686,26 +686,34 @@ class UserLogin(BaseModel):
 
 # Datenmodell: TodoCreate - definiert den erwarteten Request-Body.
 class TodoCreate(BaseModel):
-    title: str
-    subject: str
-    due_date: str
-    priority: str
+    title: str = Field(..., min_length=1, max_length=200)
+    subject: str = Field("", max_length=100)
+    due_date: str = Field("", max_length=20)
+    priority: str = Field("medium")
+
+    @field_validator('priority')
+    @classmethod
+    def validate_priority(cls, v):
+        allowed = ('low', 'medium', 'high')
+        if v not in allowed:
+            raise ValueError(f'Prioritaet muss eines von {allowed} sein')
+        return v
 
 
 # Datenmodell: HomeworkCreate - definiert den erwarteten Request-Body.
 class HomeworkCreate(BaseModel):
-    day: str
-    period: int
-    title: str
+    day: str = Field(..., min_length=1, max_length=20)
+    period: int = Field(..., ge=1, le=15)
+    title: str = Field(..., min_length=1, max_length=200)
 
 
 # Datenmodell: ExamCreate - definiert den erwarteten Request-Body.
 class ExamCreate(BaseModel):
-    subject: str
-    date: str
-    topic: Optional[str] = ""
-    period: Optional[int] = None
-    period_end: Optional[int] = None
+    subject: str = Field(..., min_length=1, max_length=100)
+    date: str = Field(..., min_length=1, max_length=20)
+    topic: Optional[str] = Field("", max_length=300)
+    period: Optional[int] = Field(None, ge=1, le=15)
+    period_end: Optional[int] = Field(None, ge=1, le=15)
 
 
 # Datenmodell: CalendarExtraCreate - definiert den erwarteten Request-Body.
@@ -730,13 +738,21 @@ class AdminMessageCreate(BaseModel):
 class AdminRoleUpdate(BaseModel):
     role: str
 
+    @field_validator('role')
+    @classmethod
+    def validate_role(cls, v):
+        allowed = ('admin', 'user')
+        if v.lower() not in allowed:
+            raise ValueError(f'Rolle muss eines von {allowed} sein')
+        return v.lower()
+
 
 # Datenmodell: GradeCreate - definiert den erwarteten Request-Body.
 class GradeCreate(BaseModel):
-    subject: str
-    value: float
-    weight: float = 1.0
-    description: Optional[str] = ""
+    subject: str = Field(..., min_length=1, max_length=100)
+    value: float = Field(..., ge=0, le=15)
+    weight: float = Field(1.0, gt=0, le=100)
+    description: Optional[str] = Field("", max_length=500)
 
 
 # Datenmodell: SubjectCreate - definiert den erwarteten Request-Body.
@@ -777,11 +793,19 @@ class FlashcardCardCreate(BaseModel):
 
 # Datenmodell: TimetableCreate - definiert den erwarteten Request-Body.
 class TimetableCreate(BaseModel):
-    day: str       # monday, tuesday, ...
-    period: int    # 1..10 (Stunde im Raster)
-    time: str      # "08:00 - 09:30" (eingetragene Zeit für diese Stunde)
-    subject: str
-    room: Optional[str] = ""
+    day: str = Field(...)       # monday, tuesday, ...
+    period: int = Field(..., ge=1, le=15)    # 1..10 (Stunde im Raster)
+    time: str = Field("", max_length=30)      # "08:00 - 09:30" (eingetragene Zeit für diese Stunde)
+    subject: str = Field(..., min_length=1, max_length=100)
+    room: Optional[str] = Field("", max_length=50)
+
+    @field_validator('day')
+    @classmethod
+    def validate_day(cls, v):
+        allowed = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
+        if v.lower() not in allowed:
+            raise ValueError(f'Tag muss eines von {allowed} sein')
+        return v.lower()
 
 
 # Datenmodell: TimetableBulk - definiert den erwarteten Request-Body.
@@ -893,6 +917,7 @@ def change_username(user_id: str, data: ChangeUsername):
         raise HTTPException(status_code=404, detail="User nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Username erfolgreich geändert"}
 
 
@@ -921,6 +946,7 @@ def change_password(user_id: str, data: ChangePassword):
     """, (hash_password(data.new_password), user_id))
 
     db.commit()
+    db.close()
     return {"message": "Passwort erfolgreich geändert"}
 
 
@@ -980,6 +1006,7 @@ def change_email_confirm(user_id: str, data: ChangeEmailCodeConfirm):
     """, (payload["new_email"], user_id))
 
     db.commit()
+    db.close()
     return {"message": "E-Mail erfolgreich geändert"}
 
 
@@ -1003,7 +1030,9 @@ def get_timetable(user_id: str):
     ORDER BY day, period
     """, (user_id,))
 
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 
 # =========================================
@@ -1034,6 +1063,7 @@ def add_timetable_entry(user_id: str, entry: TimetableCreate):
     ))
 
     db.commit()
+    db.close()
     return {"message": "Stunde hinzugefügt"}
 
 
@@ -1065,9 +1095,11 @@ def update_timetable_entry(
     ))
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Stunde aktualisiert"}
 
 
@@ -1084,9 +1116,11 @@ def delete_timetable_entry(user_id: str, entry_id: str):
     """, (entry_id, user_id))
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Eintrag nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Stunde gelöscht"}
 
 
@@ -1099,6 +1133,7 @@ def get_timetable_times(user_id: str):
     cursor = db.cursor()
     cursor.execute("SELECT period, time FROM timetable_times WHERE user_id=?", (user_id,))
     rows = cursor.fetchall()
+    db.close()
     return {str(r["period"]): r["time"] for r in rows}
 
 
@@ -1136,6 +1171,7 @@ def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
             cursor.execute("INSERT INTO timetable_times VALUES (?, ?, ?)", (user_id, period, t))
 
     db.commit()
+    db.close()
     return {"message": "Stundenplan aktualisiert"}
 
 
@@ -1165,6 +1201,7 @@ def delete_file(user_id: str, file_id: str):
 
     cursor.execute("DELETE FROM files WHERE id=?", (file_id,))
     db.commit()
+    db.close()
 
     return {"message": "Datei gelöscht"}
 
@@ -1190,11 +1227,12 @@ def download_file(user_id: str, file_id: str):
         raise HTTPException(status_code=404, detail="Datei physisch nicht vorhanden")
 
     # FileResponse mit originalem Dateinamen inkl. Endung
+    safe_filename = re.sub(r'[^\w.\- ]', '_', file["original_name"])
     return FileResponse(
         path=file_path,
-        filename=file["original_name"],  # <-- hier kommt der Name inkl. Endung
+        filename=safe_filename,
         media_type="application/octet-stream",
-        headers={"Content-Disposition": f'attachment; filename="{file["original_name"]}"'}
+        headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'}
     )
 
 
@@ -1211,7 +1249,9 @@ def get_user_files(user_id: str):
     FROM files WHERE user_id=?
     """, (user_id,))
 
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg", "docx", "txt"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -1272,23 +1312,7 @@ async def upload_file(
     ))
 
     db.commit()
-
-    return {"message": "Datei erfolgreich hochgeladen"}
-
-
-    # Metadaten speichern
-    cursor.execute("""
-    INSERT INTO files VALUES (?, ?, ?, ?, ?, ?)
-    """, (
-        file_id,
-        user_id,
-        stored_filename,
-        file.filename,
-        subject,
-        datetime.utcnow().isoformat()
-    ))
-
-    db.commit()
+    db.close()
 
     return {"message": "Datei erfolgreich hochgeladen"}
 
@@ -1306,10 +1330,12 @@ def login(user: UserLogin):
 
     if user_db is None or not verify_password(user.password, user_db['password'], db, user_db['id'] if user_db else None):
         log_login_attempt(db, user.username, False)
+        db.close()
         raise HTTPException(status_code=401, detail="Ungültiger Benutzername oder Passwort")
 
     log_login_attempt(db, user.username, True, user_db["id"])
     log_user_activity(db, user_db["id"], "login")
+    db.close()
 
     return {
         "message": "Login erfolgreich",
@@ -1655,6 +1681,7 @@ def create_todo(user_id: str, todo: TodoCreate):
     ))
 
     db.commit()
+    db.close()
     return {"message": "To-Do erstellt"}
 
 
@@ -1666,7 +1693,9 @@ def get_todos(user_id: str):
     cursor = db.cursor()
 
     cursor.execute("SELECT * FROM todos WHERE user_id=?", (user_id,))
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 # Endpoint: DELETE /todos/{user_id}/{todo_id} - API-Route mit Validierung und Datenverarbeitung.
 @app.delete("/todos/{user_id}/{todo_id}")
@@ -1681,9 +1710,11 @@ def delete_todo(user_id: str, todo_id: str):
     """, (todo_id, user_id))
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="To-Do nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "To-Do gelöscht"}
 
 
@@ -1705,6 +1736,7 @@ def toggle_todo(user_id: str, todo_id: str):
         (new_done, todo_id, user_id)
     )
     db.commit()
+    db.close()
     return {"message": "Status geändert", "done": bool(new_done)}
 
 
@@ -1736,6 +1768,7 @@ def create_homework(user_id: str, homework: HomeworkCreate):
     )
 
     db.commit()
+    db.close()
     return {"message": "Hausaufgabe gespeichert", "id": homework_id}
 
 
@@ -1761,7 +1794,9 @@ def get_homework(user_id: str):
         """,
         (user_id,)
     )
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 
 # Endpoint: DELETE /homework/{user_id}/{homework_id} - API-Route mit Validierung und Datenverarbeitung.
@@ -1780,9 +1815,11 @@ def delete_homework(user_id: str, homework_id: str):
     )
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Hausaufgabe nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Hausaufgabe gelöscht"}
 
 
@@ -1816,6 +1853,7 @@ def create_exam(user_id: str, exam: ExamCreate):
     )
 
     db.commit()
+    db.close()
     return {"message": "Klassenarbeit gespeichert", "id": exam_id}
 
 
@@ -1834,7 +1872,9 @@ def get_exams(user_id: str):
         """,
         (user_id,)
     )
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 
 # Endpoint: DELETE /exams/{user_id}/{exam_id} - API-Route mit Validierung und Datenverarbeitung.
@@ -1853,9 +1893,11 @@ def delete_exam(user_id: str, exam_id: str):
     )
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Klassenarbeit nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Klassenarbeit gelöscht"}
 
 
@@ -1880,9 +1922,11 @@ def set_exam_grade(user_id: str, exam_id: str, grade_data: dict):
     )
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Klassenarbeit nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Note für Klassenarbeit gespeichert"}
 
 
@@ -1930,6 +1974,7 @@ def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
     )
 
     db.commit()
+    db.close()
     return {"message": "Termin gespeichert", "id": event_id}
 
 
@@ -1948,7 +1993,9 @@ def get_calendar_extras(user_id: str):
         """,
         (user_id,)
     )
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 
 # Endpoint: DELETE /calendar-extras/{user_id}/{event_id} - API-Route mit Validierung und Datenverarbeitung.
@@ -2005,6 +2052,7 @@ def delete_calendar_extra(
             (json.dumps(exception_dates), event_id, user_id)
         )
         db.commit()
+        db.close()
         return {"message": "Vorkommen gelöscht"}
 
     cursor.execute(
@@ -2016,9 +2064,11 @@ def delete_calendar_extra(
     )
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Termin nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Termin gelöscht"}
 
 
@@ -2046,6 +2096,7 @@ def add_grade(user_id: str, grade: GradeCreate):
     ))
 
     db.commit()
+    db.close()
     return {"message": "Note gespeichert"}
 
 
@@ -2057,7 +2108,9 @@ def get_grades(user_id: str):
     cursor = db.cursor()
 
     cursor.execute("SELECT * FROM grades WHERE user_id=?", (user_id,))
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 
 # Endpoint: DELETE /grades/{user_id}/{grade_id} - API-Route mit Validierung und Datenverarbeitung.
@@ -2073,9 +2126,11 @@ def delete_grade(user_id: str, grade_id: str):
     """, (grade_id, user_id))
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Note nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Note gelöscht"}
 
 
@@ -2101,6 +2156,7 @@ def add_subject(user_id: str, subject: SubjectCreate):
     ))
 
     db.commit()
+    db.close()
     return {"message": "Fach gespeichert"}
 
 
@@ -2112,7 +2168,9 @@ def get_subjects(user_id: str):
     cursor = db.cursor()
 
     cursor.execute("SELECT * FROM subjects WHERE user_id=?", (user_id,))
-    return cursor.fetchall()
+    result = cursor.fetchall()
+    db.close()
+    return result
 
 
 # Endpoint: DELETE /subjects/{user_id}/{subject_id} - API-Route mit Validierung und Datenverarbeitung.
@@ -2128,9 +2186,11 @@ def delete_subject(user_id: str, subject_id: str):
     """, (subject_id, user_id))
 
     if cursor.rowcount == 0:
+        db.close()
         raise HTTPException(status_code=404, detail="Fach nicht gefunden")
 
     db.commit()
+    db.close()
     return {"message": "Fach gelöscht"}
 
 

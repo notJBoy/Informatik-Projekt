@@ -3,21 +3,16 @@
  * Dateizweck: Endpoint oder Seite "download" im Modul "files".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
-session_start();
+require_once __DIR__ . '/../includes/api_helper.php';
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: ../auth/login.php");
-    exit();
-}
-
-$user_id = $_SESSION['user_id'];
+$user_id = require_auth();
 
 if (!isset($_GET['file_id'])) {
     die("Keine Datei angegeben");
 }
 
 $file_id = $_GET['file_id'];
-$backend_url = "http://127.0.0.1:8000/files/download/$user_id/$file_id";
+$backend_url = BACKEND_BASE_URL . "/files/download/$user_id/$file_id";
 
 // CURL init
 $ch = curl_init();

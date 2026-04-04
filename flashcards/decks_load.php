@@ -3,23 +3,7 @@
  * Dateizweck: Endpoint oder Seite "decks_load" im Modul "flashcards".
  * Hinweis: Diese Datei ist Teil der LearnHub-Backend/Frontend-Anbindung.
  */
-session_start();
-if (!isset($_SESSION['user_id'])) {
-    http_response_code(401);
-    echo json_encode(["error" => "Nicht eingeloggt"]);
-    exit();
-}
-$user_id = $_SESSION['user_id'];
-$backend_url = "http://127.0.0.1:8000/flashcard-decks/$user_id";
+require_once __DIR__ . '/../includes/api_helper.php';
 
-$ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $backend_url);
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-$response = curl_exec($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-http_response_code($httpCode);
-header('Content-Type: application/json');
-echo $response;
-exit();
+$user_id = require_auth();
+backend_request('GET', "/flashcard-decks/$user_id");

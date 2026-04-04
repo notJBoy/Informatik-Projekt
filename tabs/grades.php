@@ -23,7 +23,7 @@
                             <button class="btn-primary" onclick="addGrade()"><?php echo htmlspecialchars(t('common.add')); ?></button>
                         </div>
                         <div class="grades-list" id="gradesList" style="margin-top: 1.5rem;">
-                            <p style="color:var(--color-text-muted);text-align:center;padding:1rem;"><?php echo htmlspecialchars(t('common.loading_long')); ?></p>
+                            <div class="loading-spinner"><div class="spinner"></div><span><?php echo htmlspecialchars(t('common.loading_long')); ?></span></div>
                         </div>
                     </div>
                 </div>
