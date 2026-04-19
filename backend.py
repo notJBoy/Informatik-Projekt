@@ -29,6 +29,7 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Funktion: load_local_env_files - verarbeitet die zugehoerige Backend-Operation.
 def load_local_env_files():
+    """Lädt lokale .env-Dateien und übernimmt fehlende Variablen in die Umgebung."""
     env_paths = [".venv/.env", ".env"]
     for env_path in env_paths:
         if not os.path.exists(env_path):
@@ -81,6 +82,7 @@ VERIFICATION_TTL_MINUTES = 10
 
 # Funktion: get_db - verarbeitet die zugehoerige Backend-Operation.
 def get_db():
+    """Erzeugt eine SQLite-Verbindung mit Row-Factory für Dict-ähnlichen Zugriff."""
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
     return conn
@@ -88,6 +90,7 @@ def get_db():
 
 # Funktion: init_db - verarbeitet die zugehoerige Backend-Operation.
 def init_db():
+    """Initialisiert alle Tabellen und führt einfache Datenbank-Migrationen aus."""
     db = get_db()
     cursor = db.cursor()
 
@@ -215,13 +218,18 @@ def init_db():
         value REAL,
         description TEXT,
         date TEXT,
-        weight REAL DEFAULT 1
+        weight REAL DEFAULT 1,
+        source_exam_id TEXT
     )
     """)
 
     # Add weight column if it doesn't exist yet (migration path for existing DBs)
     try:
         cursor.execute("ALTER TABLE grades ADD COLUMN weight REAL DEFAULT 1")
+    except Exception:
+        pass  # column already present
+    try:
+        cursor.execute("ALTER TABLE grades ADD COLUMN source_exam_id TEXT")
     except Exception:
         pass  # column already present
 
@@ -269,6 +277,7 @@ def init_db():
     timetable_rows = cursor.fetchall()
 
     def _parse_period(value):
+        """Parst einen möglichen Stundenwert und akzeptiert nur gültige Perioden."""
         if value is None:
             return None
         try:
@@ -278,6 +287,7 @@ def init_db():
             return None
 
     def _looks_like_time(value):
+        """Prüft, ob ein Wert wie eine Uhrzeit im Format HH:MM aussieht."""
         if value is None:
             return False
         return bool(re.match(r"^\d{1,2}:\d{2}$", str(value).strip()))
@@ -456,11 +466,13 @@ def verify_password(plain_password: str, hashed_password: str, db=None, user_id:
 
 # Funktion: generate_id - verarbeitet die zugehoerige Backend-Operation.
 def generate_id() -> str:
+    """Erzeugt eine neue UUID als String."""
     return str(uuid.uuid4())
 
 
 # Funktion: is_valid_email - verarbeitet die zugehoerige Backend-Operation.
 def is_valid_email(email: str) -> bool:
+    """Prüft eine E-Mail-Adresse mit einer einfachen Strukturvalidierung."""
     if not email or "@" not in email:
         return False
     local, _, domain = email.partition("@")
@@ -469,6 +481,7 @@ def is_valid_email(email: str) -> bool:
 
 # Funktion: normalize_hex_color - verarbeitet die zugehoerige Backend-Operation.
 def normalize_hex_color(value: Optional[str], default: str = "#0d6efd") -> str:
+    """Normalisiert erlaubte Hex-Farben und fällt sonst auf einen Standardwert zurück."""
     color = str(value or "").strip()
     if re.fullmatch(r"#[0-9a-fA-F]{6}", color):
         return color.lower()
@@ -477,6 +490,7 @@ def normalize_hex_color(value: Optional[str], default: str = "#0d6efd") -> str:
 
 # Funktion: normalize_time_value - verarbeitet die zugehoerige Backend-Operation.
 def normalize_time_value(value: Optional[str]) -> str:
+    """Validiert eine Uhrzeit im 24-Stunden-Format und gibt sonst einen Leerstring zurück."""
     time_value = str(value or "").strip()
     if re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", time_value):
         return time_value
@@ -485,11 +499,13 @@ def normalize_time_value(value: Optional[str]) -> str:
 
 # Funktion: hash_verification_code - verarbeitet die zugehoerige Backend-Operation.
 def hash_verification_code(code: str) -> str:
+    """Hasht einen Verifizierungscode für die sichere Speicherung in der Datenbank."""
     return hashlib.sha256(code.encode()).hexdigest()
 
 
 # Funktion: log_login_attempt - verarbeitet die zugehoerige Backend-Operation.
 def log_login_attempt(db, username: str, success: bool, user_id: Optional[str] = None):
+    """Speichert einen erfolgreichen oder fehlgeschlagenen Login-Versuch."""
     cursor = db.cursor()
     cursor.execute(
         """
@@ -508,6 +524,7 @@ def log_login_attempt(db, username: str, success: bool, user_id: Optional[str] =
 
 # Funktion: log_user_activity - verarbeitet die zugehoerige Backend-Operation.
 def log_user_activity(db, user_id: str, event_type: str):
+    """Protokolliert ein leichtgewichtiges Benutzerereignis für Auswertungen."""
     cursor = db.cursor()
     cursor.execute(
         """
@@ -525,6 +542,7 @@ def log_user_activity(db, user_id: str, event_type: str):
 
 # Funktion: require_admin_user - verarbeitet die zugehoerige Backend-Operation.
 def require_admin_user(cursor, user_id: str):
+    """Stellt sicher, dass eine vorhandene Nutzer-ID zur Admin-Rolle gehört."""
     cursor.execute("SELECT id, role FROM users WHERE id=?", (user_id,))
     user_row = cursor.fetchone()
     if not user_row:
@@ -535,6 +553,7 @@ def require_admin_user(cursor, user_id: str):
 
 # Funktion: send_verification_email - verarbeitet die zugehoerige Backend-Operation.
 def send_verification_email(receiver_email: str, code: str, purpose: str):
+    """Versendet einen Verifizierungscode per SMTP an die angegebene Adresse."""
     sender_email = os.getenv("LEARNHUB_SMTP_EMAIL")
     sender_password = os.getenv("LEARNHUB_SMTP_PASSWORD")
 
@@ -569,6 +588,7 @@ def send_verification_email(receiver_email: str, code: str, purpose: str):
 
 # Funktion: cleanup_expired_verifications - verarbeitet die zugehoerige Backend-Operation.
 def cleanup_expired_verifications(db):
+    """Entfernt abgelaufene Verifizierungsdatensätze aus der Datenbank."""
     cursor = db.cursor()
     cursor.execute(
         "DELETE FROM email_verifications WHERE expires_at < ?",
@@ -578,6 +598,7 @@ def cleanup_expired_verifications(db):
 
 # Funktion: create_verification - verarbeitet die zugehoerige Backend-Operation.
 def create_verification(db, user_id: Optional[str], email: str, purpose: str, payload: dict):
+    """Erzeugt einen Verifizierungseintrag, speichert ihn und verschickt den Code."""
     cleanup_expired_verifications(db)
     cursor = db.cursor()
 
@@ -606,6 +627,7 @@ def create_verification(db, user_id: Optional[str], email: str, purpose: str, pa
 
 # Funktion: consume_verification - verarbeitet die zugehoerige Backend-Operation.
 def consume_verification(db, verification_id: str, code: str, purpose: str, user_id: Optional[str]):
+    """Validiert einen Verifizierungscode, verbraucht ihn und gibt den Datensatz zurück."""
     cleanup_expired_verifications(db)
     cursor = db.cursor()
     cursor.execute(
@@ -694,6 +716,7 @@ class TodoCreate(BaseModel):
     @field_validator('priority')
     @classmethod
     def validate_priority(cls, v):
+        """Beschränkt die To-do-Priorität auf die unterstützten Werte."""
         allowed = ('low', 'medium', 'high')
         if v not in allowed:
             raise ValueError(f'Prioritaet muss eines von {allowed} sein')
@@ -741,6 +764,7 @@ class AdminRoleUpdate(BaseModel):
     @field_validator('role')
     @classmethod
     def validate_role(cls, v):
+        """Normalisiert Rollenangaben auf die erlaubten Werte admin oder user."""
         allowed = ('admin', 'user')
         if v.lower() not in allowed:
             raise ValueError(f'Rolle muss eines von {allowed} sein')
@@ -753,6 +777,7 @@ class GradeCreate(BaseModel):
     value: float = Field(..., ge=0, le=15)
     weight: float = Field(1.0, gt=0, le=100)
     description: Optional[str] = Field("", max_length=500)
+    source_exam_id: Optional[str] = Field(None, max_length=64)
 
 
 # Datenmodell: SubjectCreate - definiert den erwarteten Request-Body.
@@ -802,6 +827,7 @@ class TimetableCreate(BaseModel):
     @field_validator('day')
     @classmethod
     def validate_day(cls, v):
+        """Prüft, dass ein Wochentag als unterstützter englischer Key vorliegt."""
         allowed = ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')
         if v.lower() not in allowed:
             raise ValueError(f'Tag muss eines von {allowed} sein')
@@ -822,6 +848,7 @@ class TimetableBulk(BaseModel):
 @app.post("/auth/register")
 # Funktion: register - verarbeitet die zugehoerige Backend-Operation.
 def register(user: UserRegister):
+    """Startet die Registrierung und legt eine E-Mail-Verifizierung für neue Nutzer an."""
     db = get_db()
     cursor = db.cursor()
 
@@ -855,6 +882,7 @@ def register(user: UserRegister):
 @app.post("/auth/register/confirm")
 # Funktion: register_confirm - verarbeitet die zugehoerige Backend-Operation.
 def register_confirm(data: RegisterCodeConfirm):
+    """Bestätigt die Registrierung und erstellt den Benutzer nach erfolgreicher Codeprüfung."""
     db = get_db()
     cursor = db.cursor()
 
@@ -896,6 +924,7 @@ def register_confirm(data: RegisterCodeConfirm):
 @app.put("/auth/change-username/{user_id}")
 # Funktion: change_username - verarbeitet die zugehoerige Backend-Operation.
 def change_username(user_id: str, data: ChangeUsername):
+    """Ändert den Benutzernamen eines vorhandenen Nutzers, sofern er noch frei ist."""
     db = get_db()
     cursor = db.cursor()
 
@@ -925,6 +954,7 @@ def change_username(user_id: str, data: ChangeUsername):
 @app.put("/auth/change-password/{user_id}")
 # Funktion: change_password - verarbeitet die zugehoerige Backend-Operation.
 def change_password(user_id: str, data: ChangePassword):
+    """Aktualisiert das Passwort nach Prüfung des bisherigen Kennworts."""
     db = get_db()
     cursor = db.cursor()
 
@@ -954,6 +984,7 @@ def change_password(user_id: str, data: ChangePassword):
 @app.put("/auth/change-email/{user_id}")
 # Funktion: change_email - verarbeitet die zugehoerige Backend-Operation.
 def change_email(user_id: str, data: ChangeEmail):
+    """Startet eine E-Mail-Änderung per Verifizierung an die neue Adresse."""
     db = get_db()
     cursor = db.cursor()
 
@@ -983,6 +1014,7 @@ def change_email(user_id: str, data: ChangeEmail):
 @app.put("/auth/change-email/confirm/{user_id}")
 # Funktion: change_email_confirm - verarbeitet die zugehoerige Backend-Operation.
 def change_email_confirm(user_id: str, data: ChangeEmailCodeConfirm):
+    """Bestätigt eine angeforderte E-Mail-Änderung und speichert die neue Adresse."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1018,6 +1050,7 @@ def change_email_confirm(user_id: str, data: ChangeEmailCodeConfirm):
 @app.get("/timetable/{user_id}")
 # Funktion: get_timetable - verarbeitet die zugehoerige Backend-Operation.
 def get_timetable(user_id: str):
+    """Liefert alle Stundenplaneinträge eines Nutzers in sortierter Reihenfolge."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1046,6 +1079,7 @@ def get_timetable(user_id: str):
 @app.post("/timetable/{user_id}")
 # Funktion: add_timetable_entry - verarbeitet die zugehoerige Backend-Operation.
 def add_timetable_entry(user_id: str, entry: TimetableCreate):
+    """Speichert einen einzelnen Stundenplaneintrag für einen Nutzer."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1077,6 +1111,7 @@ def update_timetable_entry(
     entry_id: str,
     entry: TimetableCreate
 ):
+    """Aktualisiert einen vorhandenen Stundenplaneintrag eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1107,6 +1142,7 @@ def update_timetable_entry(
 @app.delete("/timetable/{user_id}/{entry_id}")
 # Funktion: delete_timetable_entry - verarbeitet die zugehoerige Backend-Operation.
 def delete_timetable_entry(user_id: str, entry_id: str):
+    """Löscht einen Stundenplaneintrag, wenn er dem Nutzer gehört."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1129,6 +1165,7 @@ def delete_timetable_entry(user_id: str, entry_id: str):
 @app.get("/timetable_times/{user_id}")
 # Funktion: get_timetable_times - verarbeitet die zugehoerige Backend-Operation.
 def get_timetable_times(user_id: str):
+    """Gibt die konfigurierten Zeitfenster pro Unterrichtsstunde zurück."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT period, time FROM timetable_times WHERE user_id=?", (user_id,))
@@ -1141,6 +1178,7 @@ def get_timetable_times(user_id: str):
 @app.post("/timetable/{user_id}/bulk")
 # Funktion: bulk_update_timetable - verarbeitet die zugehoerige Backend-Operation.
 def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
+    """Ersetzt den gesamten Stundenplan und die Stundenzeiten eines Nutzers in einem Schritt."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1183,6 +1221,7 @@ def bulk_update_timetable(user_id: str, bulk: TimetableBulk):
 @app.delete("/files/{user_id}/{file_id}")
 # Funktion: delete_file - verarbeitet die zugehoerige Backend-Operation.
 def delete_file(user_id: str, file_id: str):
+    """Entfernt eine gespeicherte Datei sowohl aus der Datenbank als auch vom Dateisystem."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1209,6 +1248,7 @@ def delete_file(user_id: str, file_id: str):
 @app.get("/files/download/{user_id}/{file_id}")
 # Funktion: download_file - verarbeitet die zugehoerige Backend-Operation.
 def download_file(user_id: str, file_id: str):
+    """Liefert eine gespeicherte Datei mit sicherem Dateinamen an den Client aus."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1241,6 +1281,7 @@ def download_file(user_id: str, file_id: str):
 @app.get("/files/{user_id}")
 # Funktion: get_user_files - verarbeitet die zugehoerige Backend-Operation.
 def get_user_files(user_id: str):
+    """Listet alle hochgeladenen Dateien eines Nutzers mit Metadaten auf."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1264,6 +1305,7 @@ async def upload_file(
     subject: str = Form(...),
     file: UploadFile = File(...)
 ):
+    """Validiert und speichert einen Dateiupload samt Metadaten für einen Nutzer."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1320,6 +1362,7 @@ async def upload_file(
 @app.post("/auth/login")
 # Funktion: login - verarbeitet die zugehoerige Backend-Operation.
 def login(user: UserLogin):
+    """Authentifiziert einen Nutzer und protokolliert Erfolg oder Fehlschlag des Logins."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1349,6 +1392,7 @@ def login(user: UserLogin):
 @app.post("/auth/delete-account/request-code/{user_id}")
 # Funktion: request_delete_account_code - verarbeitet die zugehoerige Backend-Operation.
 def request_delete_account_code(user_id: str, data: DeleteAccountRequest):
+    """Startet die Account-Löschung durch Passwortprüfung und Versand eines Bestätigungscodes."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1380,6 +1424,7 @@ def request_delete_account_code(user_id: str, data: DeleteAccountRequest):
 @app.post("/auth/delete-account/confirm/{user_id}")
 # Funktion: confirm_delete_account - verarbeitet die zugehoerige Backend-Operation.
 def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
+    """Löscht einen Nutzer samt zugehörigen Daten nach erfolgreicher Verifizierung."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1432,6 +1477,7 @@ def confirm_delete_account(user_id: str, data: DeleteAccountCodeConfirm):
 @app.get("/messages/{user_id}")
 # Funktion: get_admin_messages - verarbeitet die zugehoerige Backend-Operation.
 def get_admin_messages(user_id: str):
+    """Lädt die für einen Nutzer sichtbaren Admin-Nachrichten inklusive Broadcasts."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1470,6 +1516,7 @@ def get_admin_messages(user_id: str):
 @app.get("/admin/messages/{requester_id}")
 # Funktion: get_admin_message_management - verarbeitet die zugehoerige Backend-Operation.
 def get_admin_message_management(requester_id: str):
+    """Liefert Admins die Nachrichtenverwaltung samt Nutzerliste für das Frontend."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1520,6 +1567,7 @@ def get_admin_message_management(requester_id: str):
 @app.post("/admin/messages/{requester_id}")
 # Funktion: create_admin_message - verarbeitet die zugehoerige Backend-Operation.
 def create_admin_message(requester_id: str, payload: AdminMessageCreate):
+    """Speichert eine neue Admin-Nachricht als Broadcast oder Direktnachricht."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1568,6 +1616,7 @@ def create_admin_message(requester_id: str, payload: AdminMessageCreate):
 @app.delete("/admin/messages/{requester_id}/{message_id}")
 # Funktion: delete_admin_message - verarbeitet die zugehoerige Backend-Operation.
 def delete_admin_message(requester_id: str, message_id: str):
+    """Löscht eine Admin-Nachricht aus der Verwaltungsansicht."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1586,6 +1635,7 @@ def delete_admin_message(requester_id: str, message_id: str):
 @app.get("/admin/users/{requester_id}")
 # Funktion: get_admin_users - verarbeitet die zugehoerige Backend-Operation.
 def get_admin_users(requester_id: str):
+    """Gibt Admins eine Übersicht aller Nutzerkonten zurück."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1608,6 +1658,7 @@ def get_admin_users(requester_id: str):
 @app.put("/admin/users/{requester_id}/{target_user_id}/role")
 # Funktion: update_admin_user_role - verarbeitet die zugehoerige Backend-Operation.
 def update_admin_user_role(requester_id: str, target_user_id: str, payload: AdminRoleUpdate):
+    """Ändert die Rolle eines Nutzers und schützt den letzten verbleibenden Admin."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1665,6 +1716,7 @@ def update_admin_user_role(requester_id: str, target_user_id: str, payload: Admi
 @app.post("/todos/{user_id}")
 # Funktion: create_todo - verarbeitet die zugehoerige Backend-Operation.
 def create_todo(user_id: str, todo: TodoCreate):
+    """Legt ein neues To-do für einen Nutzer an."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1689,6 +1741,7 @@ def create_todo(user_id: str, todo: TodoCreate):
 @app.get("/todos/{user_id}")
 # Funktion: get_todos - verarbeitet die zugehoerige Backend-Operation.
 def get_todos(user_id: str):
+    """Lädt alle To-dos eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1701,6 +1754,7 @@ def get_todos(user_id: str):
 @app.delete("/todos/{user_id}/{todo_id}")
 # Funktion: delete_todo - verarbeitet die zugehoerige Backend-Operation.
 def delete_todo(user_id: str, todo_id: str):
+    """Entfernt ein To-do des Nutzers anhand seiner ID."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1722,6 +1776,7 @@ def delete_todo(user_id: str, todo_id: str):
 @app.patch("/todos/{user_id}/{todo_id}/toggle")
 # Funktion: toggle_todo - verarbeitet die zugehoerige Backend-Operation.
 def toggle_todo(user_id: str, todo_id: str):
+    """Wechselt den Erledigt-Status eines To-dos zwischen offen und erledigt."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1748,6 +1803,7 @@ def toggle_todo(user_id: str, todo_id: str):
 @app.post("/homework/{user_id}")
 # Funktion: create_homework - verarbeitet die zugehoerige Backend-Operation.
 def create_homework(user_id: str, homework: HomeworkCreate):
+    """Speichert eine Hausaufgabe für Tag und Unterrichtsstunde eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
     homework_id = generate_id()
@@ -1776,6 +1832,7 @@ def create_homework(user_id: str, homework: HomeworkCreate):
 @app.get("/homework/{user_id}")
 # Funktion: get_homework - verarbeitet die zugehoerige Backend-Operation.
 def get_homework(user_id: str):
+    """Lädt die Hausaufgaben eines Nutzers in Wochentags- und Stundenreihenfolge."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1803,6 +1860,7 @@ def get_homework(user_id: str):
 @app.delete("/homework/{user_id}/{homework_id}")
 # Funktion: delete_homework - verarbeitet die zugehoerige Backend-Operation.
 def delete_homework(user_id: str, homework_id: str):
+    """Löscht eine gespeicherte Hausaufgabe eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1831,6 +1889,7 @@ def delete_homework(user_id: str, homework_id: str):
 @app.post("/exams/{user_id}")
 # Funktion: create_exam - verarbeitet die zugehoerige Backend-Operation.
 def create_exam(user_id: str, exam: ExamCreate):
+    """Legt eine neue Klassenarbeit mit optionalem Stundenbereich an."""
     db = get_db()
     cursor = db.cursor()
     exam_id = generate_id()
@@ -1861,6 +1920,7 @@ def create_exam(user_id: str, exam: ExamCreate):
 @app.get("/exams/{user_id}")
 # Funktion: get_exams - verarbeitet die zugehoerige Backend-Operation.
 def get_exams(user_id: str):
+    """Lädt alle Klassenarbeiten eines Nutzers chronologisch sortiert."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1881,6 +1941,7 @@ def get_exams(user_id: str):
 @app.delete("/exams/{user_id}/{exam_id}")
 # Funktion: delete_exam - verarbeitet die zugehoerige Backend-Operation.
 def delete_exam(user_id: str, exam_id: str):
+    """Entfernt eine Klassenarbeit eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1905,6 +1966,7 @@ def delete_exam(user_id: str, exam_id: str):
 @app.put("/exams/{user_id}/{exam_id}/grade")
 # Funktion: set_exam_grade - verarbeitet die zugehoerige Backend-Operation.
 def set_exam_grade(user_id: str, exam_id: str, grade_data: dict):
+    """Speichert oder aktualisiert die eingetragene Note direkt an einer Klassenarbeit."""
     db = get_db()
     cursor = db.cursor()
 
@@ -1938,6 +2000,7 @@ def set_exam_grade(user_id: str, exam_id: str, grade_data: dict):
 @app.post("/calendar-extras/{user_id}")
 # Funktion: create_calendar_extra - verarbeitet die zugehoerige Backend-Operation.
 def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
+    """Erstellt einen zusätzlichen Kalendertermin inklusive Wiederholungslogik und Zeiten."""
     db = get_db()
     cursor = db.cursor()
     event_id = generate_id()
@@ -1982,6 +2045,7 @@ def create_calendar_extra(user_id: str, event: CalendarExtraCreate):
 @app.get("/calendar-extras/{user_id}")
 # Funktion: get_calendar_extras - verarbeitet die zugehoerige Backend-Operation.
 def get_calendar_extras(user_id: str):
+    """Lädt alle zusätzlichen Kalendertermine eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2007,6 +2071,7 @@ def delete_calendar_extra(
     delete_scope: str = "series",
     occurrence_date: Optional[str] = None,
 ):
+    """Löscht entweder eine ganze Terminserie oder ein einzelnes Vorkommen per Ausnahme-Datum."""
     db = get_db()
     cursor = db.cursor()
     delete_scope = (delete_scope or "series").strip().lower()
@@ -2080,20 +2145,28 @@ def delete_calendar_extra(
 @app.post("/grades/{user_id}")
 # Funktion: add_grade - verarbeitet die zugehoerige Backend-Operation.
 def add_grade(user_id: str, grade: GradeCreate):
+    """Speichert einen Noteneintrag inklusive Gewichtung und optionaler Prüfungsreferenz."""
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("""
-    INSERT INTO grades VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (
-        generate_id(),
-        user_id,
-        grade.subject,
-        grade.value,
-        grade.description,
-        datetime.utcnow().isoformat(),
-        grade.weight if grade.weight and grade.weight > 0 else 1.0
-    ))
+    source_exam_id = (grade.source_exam_id or "").strip() or None
+
+    cursor.execute(
+        """
+        INSERT INTO grades (id, user_id, subject, value, description, date, weight, source_exam_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            generate_id(),
+            user_id,
+            grade.subject,
+            grade.value,
+            grade.description,
+            datetime.utcnow().isoformat(),
+            grade.weight if grade.weight and grade.weight > 0 else 1.0,
+            source_exam_id,
+        )
+    )
 
     db.commit()
     db.close()
@@ -2104,6 +2177,7 @@ def add_grade(user_id: str, grade: GradeCreate):
 @app.get("/grades/{user_id}")
 # Funktion: get_grades - verarbeitet die zugehoerige Backend-Operation.
 def get_grades(user_id: str):
+    """Lädt alle Noten eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2117,6 +2191,7 @@ def get_grades(user_id: str):
 @app.delete("/grades/{user_id}/{grade_id}")
 # Funktion: delete_grade - verarbeitet die zugehoerige Backend-Operation.
 def delete_grade(user_id: str, grade_id: str):
+    """Entfernt einen Noteneintrag eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2142,6 +2217,7 @@ def delete_grade(user_id: str, grade_id: str):
 @app.post("/subjects/{user_id}")
 # Funktion: add_subject - verarbeitet die zugehoerige Backend-Operation.
 def add_subject(user_id: str, subject: SubjectCreate):
+    """Legt ein neues Fach mit Name und Farbe für einen Nutzer an."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2164,6 +2240,7 @@ def add_subject(user_id: str, subject: SubjectCreate):
 @app.get("/subjects/{user_id}")
 # Funktion: get_subjects - verarbeitet die zugehoerige Backend-Operation.
 def get_subjects(user_id: str):
+    """Lädt alle Fächer eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2177,6 +2254,7 @@ def get_subjects(user_id: str):
 @app.delete("/subjects/{user_id}/{subject_id}")
 # Funktion: delete_subject - verarbeitet die zugehoerige Backend-Operation.
 def delete_subject(user_id: str, subject_id: str):
+    """Löscht ein Fach eines Nutzers anhand seiner ID."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2202,6 +2280,7 @@ def delete_subject(user_id: str, subject_id: str):
 @app.get("/flashcard-decks/explore")
 # Funktion: explore_public_decks - verarbeitet die zugehoerige Backend-Operation.
 def explore_public_decks():
+    """Gibt öffentlich freigegebene Flashcard-Stapel mit Zusatzinformationen zurück."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
@@ -2222,6 +2301,7 @@ def explore_public_decks():
 @app.get("/flashcard-decks/{user_id}")
 # Funktion: get_user_decks - verarbeitet die zugehoerige Backend-Operation.
 def get_user_decks(user_id: str):
+    """Lädt alle Flashcard-Stapel eines Nutzers inklusive Kartenanzahl."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
@@ -2240,6 +2320,7 @@ def get_user_decks(user_id: str):
 @app.post("/flashcard-decks/{user_id}")
 # Funktion: create_deck - verarbeitet die zugehoerige Backend-Operation.
 def create_deck(user_id: str, deck: FlashcardDeckCreate):
+    """Erstellt einen neuen Flashcard-Stapel für einen Nutzer."""
     db = get_db()
     cursor = db.cursor()
     deck_id = generate_id()
@@ -2263,6 +2344,7 @@ def create_deck(user_id: str, deck: FlashcardDeckCreate):
 @app.put("/flashcard-decks/{user_id}/{deck_id}")
 # Funktion: update_deck - verarbeitet die zugehoerige Backend-Operation.
 def update_deck(user_id: str, deck_id: str, deck: FlashcardDeckUpdate):
+    """Aktualisiert Name, Fach, Beschreibung oder Sichtbarkeit eines Stapels."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM flashcard_decks WHERE id=? AND user_id=?", (deck_id, user_id))
@@ -2286,6 +2368,7 @@ def update_deck(user_id: str, deck_id: str, deck: FlashcardDeckUpdate):
 @app.delete("/flashcard-decks/{user_id}/{deck_id}")
 # Funktion: delete_deck - verarbeitet die zugehoerige Backend-Operation.
 def delete_deck(user_id: str, deck_id: str):
+    """Löscht einen Stapel und die dazugehörigen Karten des Nutzers."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("DELETE FROM flashcards WHERE deck_id=? AND user_id=?", (deck_id, user_id))
@@ -2301,6 +2384,7 @@ def delete_deck(user_id: str, deck_id: str):
 @app.post("/flashcard-decks/{user_id}/copy/{source_deck_id}")
 # Funktion: copy_deck - verarbeitet die zugehoerige Backend-Operation.
 def copy_deck(user_id: str, source_deck_id: str):
+    """Kopiert einen öffentlichen Stapel samt Karten in den Bestand des Nutzers."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM flashcard_decks WHERE id=? AND public=1", (source_deck_id,))
@@ -2337,6 +2421,7 @@ def copy_deck(user_id: str, source_deck_id: str):
 @app.get("/flashcard-cards/deck/{deck_id}")
 # Funktion: get_deck_cards - verarbeitet die zugehoerige Backend-Operation.
 def get_deck_cards(deck_id: str):
+    """Lädt alle Karten eines bestimmten Flashcard-Stapels."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("""
@@ -2351,6 +2436,7 @@ def get_deck_cards(deck_id: str):
 @app.post("/flashcard-cards/{user_id}/deck/{deck_id}")
 # Funktion: add_card_to_deck - verarbeitet die zugehoerige Backend-Operation.
 def add_card_to_deck(user_id: str, deck_id: str, card: FlashcardCardCreate):
+    """Fügt einem vorhandenen Nutzer-Stapel eine neue Karte hinzu."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT id FROM flashcard_decks WHERE id=? AND user_id=?", (deck_id, user_id))
@@ -2368,6 +2454,7 @@ def add_card_to_deck(user_id: str, deck_id: str, card: FlashcardCardCreate):
 @app.delete("/flashcard-cards/{user_id}/{card_id}")
 # Funktion: delete_card - verarbeitet die zugehoerige Backend-Operation.
 def delete_card(user_id: str, card_id: str):
+    """Entfernt eine einzelne Flashcard eines Nutzers."""
     db = get_db()
     cursor = db.cursor()
     cursor.execute("DELETE FROM flashcards WHERE id=? AND user_id=?", (card_id, user_id))
@@ -2386,6 +2473,7 @@ def delete_card(user_id: str, card_id: str):
 @app.post("/flashcards/{user_id}")
 # Funktion: create_flashcard - verarbeitet die zugehoerige Backend-Operation.
 def create_flashcard(user_id: str, card: FlashcardCreate):
+    """Erstellt eine einzelne Karteikarte im Legacy-Format ohne Stapelbezug."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2409,6 +2497,7 @@ def create_flashcard(user_id: str, card: FlashcardCreate):
 @app.get("/flashcards/{user_id}")
 # Funktion: get_flashcards - verarbeitet die zugehoerige Backend-Operation.
 def get_flashcards(user_id: str):
+    """Lädt eigene sowie öffentliche Legacy-Karteikarten für einen Nutzer."""
     db = get_db()
     cursor = db.cursor()
 
@@ -2428,6 +2517,7 @@ def get_flashcards(user_id: str):
 @app.get("/admin/stats/{requester_id}")
 # Funktion: admin_stats - verarbeitet die zugehoerige Backend-Operation.
 def admin_stats(requester_id: str):
+    """Berechnet Kennzahlen und Trends für das Admin-Dashboard der Plattform."""
     db = get_db()
     cursor = db.cursor()
 

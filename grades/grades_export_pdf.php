@@ -3,8 +3,26 @@
  * Exportiert die Noten des eingeloggten Nutzers als einfache PDF-Datei.
  */
 require_once __DIR__ . '/../includes/api_helper.php';
+require_once __DIR__ . '/../includes/i18n.php';
 
 $user_id = require_auth();
+$locale = learnhub_get_locale();
+$isEnglish = $locale === 'en';
+
+$messages = [
+    'load_error' => $isEnglish ? 'Error while loading grade data' : 'Fehler beim Laden der Notendaten',
+    'invalid_response' => $isEnglish ? 'Invalid response from backend' : 'Ungültige Antwort vom Backend',
+    'title' => $isEnglish ? 'Grades Export' : 'Noten Export',
+    'date_label' => $isEnglish ? 'Date' : 'Datum',
+    'avg_label' => $isEnglish ? 'Weighted average' : 'Gewichteter Durchschnitt',
+    'points' => $isEnglish ? 'points' : 'Punkte',
+    'empty' => $isEnglish ? 'No grades available.' : 'Keine Noten vorhanden.',
+    'filename_prefix' => $isEnglish ? 'grades' : 'noten',
+    'point_suffix' => $isEnglish ? ' pts' : ' P',
+];
+
+$dateFormat = $isEnglish ? 'Y-m-d H:i' : 'd.m.Y H:i';
+
 $backend_url = BACKEND_BASE_URL . "/grades/$user_id";
 
 $ch = curl_init();
@@ -16,14 +34,14 @@ curl_close($ch);
 
 if ($httpCode !== 200 || $response === false) {
     http_response_code($httpCode ?: 500);
-    echo "Fehler beim Laden der Notendaten";
+    echo $messages['load_error'];
     exit();
 }
 
 $data = json_decode($response, true);
 if (!is_array($data)) {
     http_response_code(500);
-    echo "Ungültige Antwort vom Backend";
+    echo $messages['invalid_response'];
     exit();
 }
 
@@ -44,14 +62,14 @@ foreach ($data as $row) {
 $avg = $totalWeighted > 0 ? number_format($sumWeighted / $totalWeighted, 2, '.', '') : '0.00';
 
 $lines = [
-    'Noten Export',
-    'Datum: ' . date('d.m.Y H:i'),
-    'Gewichteter Durchschnitt: ' . $avg . ' Punkte',
+    $messages['title'],
+    $messages['date_label'] . ': ' . date($dateFormat),
+    $messages['avg_label'] . ': ' . $avg . ' ' . $messages['points'],
     str_repeat('-', 60),
 ];
 
 if (empty($data)) {
-    $lines[] = 'Keine Noten vorhanden.';
+    $lines[] = $messages['empty'];
 } else {
     foreach ($data as $row) {
         $weight = (float)($row['weight'] ?? 1);
@@ -61,7 +79,7 @@ if (empty($data)) {
         $lines[] = sprintf(
             '%s | %s P | x%s | %s',
             (string)($row['subject'] ?? '-'),
-            (string)($row['value'] ?? '-'),
+            (string)($row['value'] ?? '-') . $messages['point_suffix'],
             rtrim(rtrim(number_format($weight, 2, '.', ''), '0'), '.'),
             (string)($row['description'] ?? '')
         );
@@ -107,7 +125,7 @@ foreach ($offsets as $offset) {
 }
 $pdf .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" . $xrefPos . "\n%%EOF";
 
-$filename = 'noten_' . date('Y-m-d') . '.pdf';
+$filename = $messages['filename_prefix'] . '_' . date('Y-m-d') . '.pdf';
 header('Content-Type: application/pdf');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Content-Length: ' . strlen($pdf));

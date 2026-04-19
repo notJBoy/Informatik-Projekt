@@ -28,13 +28,3 @@ $payload = json_encode([
 ]);
 
 backend_request('POST', "/flashcard-cards/$user_id/deck/" . urlencode($deck_id), $payload);
-curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-$response = curl_exec($ch);
-$httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-http_response_code($httpCode);
-header('Content-Type: application/json');
-echo $response;
-exit();

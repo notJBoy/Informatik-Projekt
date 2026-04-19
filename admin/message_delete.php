@@ -16,7 +16,3 @@ if (!isset($_GET['message_id'])) {
 
 $message_id = $_GET['message_id'];
 backend_request('DELETE', "/admin/messages/$user_id/$message_id");
-
-http_response_code($httpCode ?: 500);
-echo $response;
-exit();

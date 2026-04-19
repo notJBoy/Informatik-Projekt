@@ -49,22 +49,51 @@ curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 $grades_response = curl_exec($ch);
+$grades_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
 
+if ($grades_response === false || $grades_http_code !== 200) {
+    http_response_code($grades_http_code ?: 502);
+    header('Content-Type: application/json');
+    echo json_encode(["error" => "Vorhandene Noten konnten nicht geladen werden"]);
+    exit();
+}
+
 $existing_grades = json_decode($grades_response, true) ?: [];
+$grade_to_replace = null;
+$legacy_candidates = [];
 foreach ($existing_grades as $grade) {
-    if ($grade['subject'] === $subject && strpos($grade['description'] ?? '', 'Klassenarbeit') === 0) {
-        // Delete this grade
-        $delete_url = BACKEND_BASE_URL . "/grades/$user_id/" . $grade['id'];
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $delete_url);
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        curl_exec($ch);
-        curl_close($ch);
+    if (($grade['source_exam_id'] ?? '') === $exam_id) {
+        $grade_to_replace = $grade;
         break;
+    }
+
+    if (($grade['subject'] ?? '') === $subject && strpos($grade['description'] ?? '', 'Klassenarbeit') === 0) {
+        $legacy_candidates[] = $grade;
+    }
+}
+
+if ($grade_to_replace === null && count($legacy_candidates) === 1) {
+    $grade_to_replace = $legacy_candidates[0];
+}
+
+if ($grade_to_replace !== null) {
+    $delete_url = BACKEND_BASE_URL . "/grades/$user_id/" . $grade_to_replace['id'];
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $delete_url);
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    curl_exec($ch);
+    $delete_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($delete_http_code < 200 || $delete_http_code >= 300) {
+        http_response_code($delete_http_code ?: 502);
+        header('Content-Type: application/json');
+        echo json_encode(["error" => "Vorhandene Klassenarbeits-Note konnte nicht aktualisiert werden"]);
+        exit();
     }
 }
 
@@ -75,7 +104,8 @@ $payload = json_encode([
     'subject' => $subject,
     'value' => (float)$value,
     'weight' => (float)$weight,
-    'description' => $full_description
+    'description' => $full_description,
+    'source_exam_id' => $exam_id
 ]);
 
 $ch = curl_init();
@@ -90,6 +120,13 @@ curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
+
+if ($response === false || $httpCode < 200 || $httpCode >= 300) {
+    http_response_code($httpCode ?: 502);
+    header('Content-Type: application/json');
+    echo $response !== false ? $response : json_encode(["error" => "Note konnte nicht gespeichert werden"]);
+    exit();
+}
 
 // Also update exam with grade for reference
 $update_backend_url = BACKEND_BASE_URL . "/exams/$user_id/$exam_id/grade";
@@ -107,8 +144,16 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
 curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
-curl_exec($ch);
+$update_response = curl_exec($ch);
+$update_http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 curl_close($ch);
+
+if ($update_response === false || $update_http_code < 200 || $update_http_code >= 300) {
+    http_response_code($update_http_code ?: 502);
+    header('Content-Type: application/json');
+    echo json_encode(["error" => "Die Klassenarbeit wurde gespeichert, aber die Verknüpfung zur Notenübersicht konnte nicht aktualisiert werden"]);
+    exit();
+}
 
 http_response_code($httpCode);
 header('Content-Type: application/json');

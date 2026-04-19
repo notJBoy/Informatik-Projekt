@@ -26,6 +26,7 @@ curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
 curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
 $response = curl_exec($ch);
+$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 
 if ($response === false) {
     curl_close($ch);
@@ -34,5 +35,11 @@ if ($response === false) {
 }
 
 curl_close($ch);
+
+if ($httpCode < 200 || $httpCode >= 300) {
+    header($filesTabRedirect . "&delete=error");
+    exit();
+}
+
 header($filesTabRedirect . "&delete=success");
 exit();

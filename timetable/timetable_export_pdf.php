@@ -3,8 +3,25 @@
  * Exportiert den Stundenplan des eingeloggten Nutzers als einfache PDF-Datei.
  */
 require_once __DIR__ . '/../includes/api_helper.php';
+require_once __DIR__ . '/../includes/i18n.php';
 
 $user_id = require_auth();
+$locale = learnhub_get_locale();
+$isEnglish = $locale === 'en';
+
+$messages = [
+    'load_error' => $isEnglish ? 'Error while loading timetable data' : 'Fehler beim Laden der Stundenplandaten',
+    'invalid_response' => $isEnglish ? 'Invalid response from backend' : 'Ungültige Antwort vom Backend',
+    'title' => $isEnglish ? 'Timetable Export' : 'Stundenplan Export',
+    'date_label' => $isEnglish ? 'Date' : 'Datum',
+    'empty' => $isEnglish ? 'No entries available.' : 'Keine Einträge vorhanden.',
+    'period_label' => $isEnglish ? 'Period' : 'Std',
+    'room_label' => $isEnglish ? 'Room' : 'Raum',
+    'filename_prefix' => $isEnglish ? 'timetable' : 'stundenplan',
+];
+
+$dateFormat = $isEnglish ? 'Y-m-d H:i' : 'd.m.Y H:i';
+
 $backend_url = BACKEND_BASE_URL . "/timetable/$user_id";
 
 $ch = curl_init();
@@ -16,25 +33,35 @@ curl_close($ch);
 
 if ($httpCode !== 200 || $response === false) {
     http_response_code($httpCode ?: 500);
-    echo "Fehler beim Laden der Stundenplandaten";
+    echo $messages['load_error'];
     exit();
 }
 
 $data = json_decode($response, true);
 if (!is_array($data)) {
     http_response_code(500);
-    echo "Ungültige Antwort vom Backend";
+    echo $messages['invalid_response'];
     exit();
 }
 
 $dayOrder = [
-    'Montag' => 1,
-    'Dienstag' => 2,
-    'Mittwoch' => 3,
-    'Donnerstag' => 4,
-    'Freitag' => 5,
-    'Samstag' => 6,
-    'Sonntag' => 7,
+    'monday' => 1,
+    'tuesday' => 2,
+    'wednesday' => 3,
+    'thursday' => 4,
+    'friday' => 5,
+    'saturday' => 6,
+    'sunday' => 7,
+];
+
+$dayLabels = [
+    'monday' => $isEnglish ? 'Monday' : 'Montag',
+    'tuesday' => $isEnglish ? 'Tuesday' : 'Dienstag',
+    'wednesday' => $isEnglish ? 'Wednesday' : 'Mittwoch',
+    'thursday' => $isEnglish ? 'Thursday' : 'Donnerstag',
+    'friday' => $isEnglish ? 'Friday' : 'Freitag',
+    'saturday' => $isEnglish ? 'Saturday' : 'Samstag',
+    'sunday' => $isEnglish ? 'Sunday' : 'Sonntag',
 ];
 
 usort($data, function ($a, $b) use ($dayOrder) {
@@ -47,21 +74,24 @@ usort($data, function ($a, $b) use ($dayOrder) {
 });
 
 $lines = [
-    'Stundenplan Export',
-    'Datum: ' . date('d.m.Y H:i'),
+    $messages['title'],
+    $messages['date_label'] . ': ' . date($dateFormat),
     str_repeat('-', 60),
 ];
 
 if (empty($data)) {
-    $lines[] = 'Keine Einträge vorhanden.';
+    $lines[] = $messages['empty'];
 } else {
     foreach ($data as $row) {
+        $dayKey = strtolower((string)($row['day'] ?? ''));
         $lines[] = sprintf(
-            '%s | %s. Std | %s | %s | Raum %s',
-            (string)($row['day'] ?? '-'),
+            '%s | %s. %s | %s | %s | %s %s',
+            (string)($dayLabels[$dayKey] ?? ($row['day'] ?? '-')),
             (string)($row['period'] ?? '-'),
+            $messages['period_label'],
             (string)($row['time'] ?? '-'),
             (string)($row['subject'] ?? '-'),
+            $messages['room_label'],
             (string)($row['room'] ?? '-')
         );
     }
@@ -106,7 +136,7 @@ foreach ($offsets as $offset) {
 }
 $pdf .= "trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n" . $xrefPos . "\n%%EOF";
 
-$filename = 'stundenplan_' . date('Y-m-d') . '.pdf';
+$filename = $messages['filename_prefix'] . '_' . date('Y-m-d') . '.pdf';
 header('Content-Type: application/pdf');
 header('Content-Disposition: attachment; filename="' . $filename . '"');
 header('Content-Length: ' . strlen($pdf));
