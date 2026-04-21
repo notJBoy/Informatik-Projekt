@@ -16,18 +16,18 @@ Eine anwendungsbasierte Lernplattform für Schüler und Studierende mit Karteika
 ***
 
 ## Installation
-# 1. Repository klonen
-git clone https://github.com/notJBoy/Informatik-Projekt.git
-cd Informatik-Projekt
+### 1. Repository klonen
+`git clone https://github.com/notJBoy/Informatik-Projekt`
 
-# 2. Python-Abhängigkeiten installieren
-pip install -r requirements.txt
 
-# 3. Backend starten
-python backend.py
-# → läuft auf http://localhost:8000
+### 2. Python-Abhängigkeiten installieren
+`pip install -r requirements.txt`
 
-# 4. PHP-Server starten (z. B. via XAMPP auf Port 8080)
-# → Dashboard öffnen: http://localhost:8080/current_dashboard.php // http://localhost:8080/index.php
+### 3. Backend starten
+`python backend.py`
+#### → läuft auf http://localhost:8000
+
+### 4. PHP-Server starten (z. B. via XAMPP auf Port 8080)
+#### → Dashboard öffnen: http://localhost:8080/current_dashboard.php // http://localhost:8080/index.php
 
 Hinweis: Für E-Mail-Verifikation muss in backend.py ein Gmail-SMTP-Account konfiguriert sein.
