@@ -16,8 +16,8 @@ import uuid
 import hashlib
 import os
 import re
-import smtplib
 import secrets
+import smtplib
 import ssl
 import json
 import bcrypt
@@ -65,14 +65,18 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080", "http://127.0.0.1:8080"],
+    allow_origins=[
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "https://localhost:8080",
+        "https://127.0.0.1:8080",
+    ],
+    allow_origin_regex=r"https://.*\.app\.github\.dev",
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
 )
 
 DB_NAME = "learnhub.db"
-SMTP_HOST = "smtp.gmail.com"
-SMTP_PORT = 465
 VERIFICATION_TTL_MINUTES = 10
 
 
@@ -553,11 +557,16 @@ def require_admin_user(cursor, user_id: str):
 
 # Funktion: send_verification_email - verarbeitet die zugehoerige Backend-Operation.
 def send_verification_email(receiver_email: str, code: str, purpose: str):
-    """Versendet einen Verifizierungscode per SMTP an die angegebene Adresse."""
-    sender_email = os.getenv("LEARNHUB_SMTP_EMAIL")
-    sender_password = os.getenv("LEARNHUB_SMTP_PASSWORD")
+    """Versendet einen Verifizierungscode per SMTP."""
+    smtp_host = os.getenv("LEARNHUB_SMTP_HOST", "smtp.web.de")
+    smtp_port = int(os.getenv("LEARNHUB_SMTP_PORT", "465"))
+    smtp_email = os.getenv("LEARNHUB_SMTP_EMAIL")
+    smtp_password = os.getenv("LEARNHUB_SMTP_PASSWORD")
+    sender_name = os.getenv("LEARNHUB_SMTP_SENDER_NAME", "LearnHub")
+    use_ssl = os.getenv("LEARNHUB_SMTP_USE_SSL", "1") == "1"
+    use_starttls = os.getenv("LEARNHUB_SMTP_USE_STARTTLS", "0") == "1"
 
-    if not sender_email or not sender_password:
+    if not smtp_email or not smtp_password:
         raise HTTPException(
             status_code=500,
             detail="E-Mail-Versand ist nicht konfiguriert (LEARNHUB_SMTP_EMAIL/LEARNHUB_SMTP_PASSWORD fehlen)"
@@ -568,22 +577,34 @@ def send_verification_email(receiver_email: str, code: str, purpose: str):
         "change_email": "Dein LearnHub Verifizierungscode (E-Mail-Aenderung)",
         "delete_account": "Dein LearnHub Verifizierungscode (Account-Loeschung)"
     }
-    message = EmailMessage()
-    message["Subject"] = subject_map.get(purpose, "LearnHub Verifizierungscode")
-    message["From"] = sender_email
-    message["To"] = receiver_email
-    message.set_content(
+    subject = subject_map.get(purpose, "LearnHub Verifizierungscode")
+    text_content = (
         f"Hallo,\n\n"
         f"dein Verifizierungscode lautet: {code}\n"
         f"Der Code ist {VERIFICATION_TTL_MINUTES} Minuten gueltig.\n\n"
         "Wenn du diese Aktion nicht gestartet hast, ignoriere diese E-Mail.\n\n"
         "LearnHub"
     )
+    message = EmailMessage()
+    message["Subject"] = subject
+    message["From"] = f"{sender_name} <{smtp_email}>"
+    message["To"] = receiver_email
+    message.set_content(text_content)
 
-    context = ssl.create_default_context()
-    with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
-        server.login(sender_email, sender_password)
-        server.send_message(message)
+    try:
+        context = ssl.create_default_context()
+        if use_ssl:
+            with smtplib.SMTP_SSL(smtp_host, smtp_port, context=context, timeout=20) as server:
+                server.login(smtp_email, smtp_password)
+                server.send_message(message)
+        else:
+            with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+                if use_starttls:
+                    server.starttls(context=context)
+                server.login(smtp_email, smtp_password)
+                server.send_message(message)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"SMTP Versand fehlgeschlagen: {exc}") from exc
 
 
 # Funktion: cleanup_expired_verifications - verarbeitet die zugehoerige Backend-Operation.
@@ -2678,7 +2699,7 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "backend:app",
-        host="127.0.0.1",
+        host="0.0.0.0",
         port=8000,
         reload=True
     )

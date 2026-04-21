@@ -2994,7 +2994,36 @@ themeToggle.addEventListener('click', () => {
         };
 
         const CURRENT_USER_ID = "<?php echo htmlspecialchars($_SESSION['user_id']); ?>";
-        const BACKEND_URL = "<?php echo defined('BACKEND_BASE_URL') ? BACKEND_BASE_URL : 'http://localhost:8000'; ?>";
+        const CONFIG_BACKEND_URL = "<?php echo defined('BACKEND_BASE_URL') ? BACKEND_BASE_URL : ''; ?>";
+        function resolveBackendUrl() {
+            const { protocol, hostname } = window.location;
+            const isPageLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+
+            if (CONFIG_BACKEND_URL) {
+                try {
+                    const cfg = new URL(CONFIG_BACKEND_URL);
+                    const isCfgLocal = cfg.hostname === 'localhost' || cfg.hostname === '127.0.0.1';
+                    // In Remote-Umgebungen (z. B. Codespaces) darf localhost aus PHP nicht erzwungen werden.
+                    if (!(isCfgLocal && !isPageLocal)) {
+                        return CONFIG_BACKEND_URL;
+                    }
+                } catch {
+                    // Bei ungültiger URL auf automatische Erkennung zurückfallen.
+                }
+            }
+
+            const codespacesMatch = hostname.match(/^(.*)-\d+(\..+)$/);
+            if (codespacesMatch) {
+                return `${protocol}//${codespacesMatch[1]}-8000${codespacesMatch[2]}`;
+            }
+
+            if (isPageLocal) {
+                return 'http://127.0.0.1:8000';
+            }
+
+            return `${protocol}//${hostname}:8000`;
+        }
+        const BACKEND_URL = resolveBackendUrl();
 
         function getScopedStorageKey(baseKey) {
             return `${baseKey}_${CURRENT_USER_ID}`;
@@ -5611,6 +5640,16 @@ themeToggle.addEventListener('click', () => {
             el.className = 'modal-msg ' + type;
         }
 
+        async function parseApiResponse(res) {
+            const raw = await res.text();
+            if (!raw) return {};
+            try {
+                return JSON.parse(raw);
+            } catch {
+                return { detail: raw };
+            }
+        }
+
         async function changeUsername() {
             const val = document.getElementById('newUsername').value.trim();
             if (!val) return setMsg('msgUsername', I18N.enterUsername, 'error');
@@ -5620,7 +5659,7 @@ themeToggle.addEventListener('click', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ new_username: val })
                 });
-                const data = await res.json();
+                const data = await parseApiResponse(res);
                 if (res.ok) {
                     setMsg('msgUsername', '✅ ' + data.message, 'success');
                     document.getElementById('newUsername').value = '';
@@ -5643,7 +5682,7 @@ themeToggle.addEventListener('click', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ old_password: oldPw, new_password: newPw })
                 });
-                const data = await res.json();
+                const data = await parseApiResponse(res);
                 if (res.ok) {
                     setMsg('msgPassword', '✅ ' + data.message, 'success');
                     document.getElementById('oldPassword').value = '';
@@ -5659,17 +5698,17 @@ themeToggle.addEventListener('click', () => {
             const val = document.getElementById('newEmail').value.trim();
             if (!val || !val.includes('@')) return setMsg('msgEmail', I18N.enterValidEmail, 'error');
             try {
-                const res = await fetch(`${BACKEND_URL}/auth/change-email/${CURRENT_USER_ID}`, {
-                    method: 'PUT',
+                const res = await fetch('auth/change_email_request.php', {
+                    method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ new_email: val })
                 });
-                const data = await res.json();
+                const data = await parseApiResponse(res);
                 if (res.ok) {
                     emailChangeVerificationId = data.verification_id || '';
                     setMsg('msgEmail', '✅ ' + I18N.codeSentEnterVerification, 'success');
                 } else {
-                    setMsg('msgEmail', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
+                    setMsg('msgEmail', '❌ ' + (data.detail || data.error || I18N.errorGeneric), 'error');
                 }
             } catch { setMsg('msgEmail', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
@@ -5679,19 +5718,19 @@ themeToggle.addEventListener('click', () => {
             if (!emailChangeVerificationId) return setMsg('msgEmail', I18N.sendCodeFirst, 'error');
             if (!code) return setMsg('msgEmail', I18N.enterVerificationCode, 'error');
             try {
-                const res = await fetch(`${BACKEND_URL}/auth/change-email/confirm/${CURRENT_USER_ID}`, {
-                    method: 'PUT',
+                const res = await fetch('auth/change_email_confirm.php', {
+                    method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ verification_id: emailChangeVerificationId, code: code })
                 });
-                const data = await res.json();
+                const data = await parseApiResponse(res);
                 if (res.ok) {
                     setMsg('msgEmail', '✅ ' + data.message, 'success');
                     document.getElementById('newEmail').value = '';
                     document.getElementById('emailVerificationCode').value = '';
                     emailChangeVerificationId = '';
                 } else {
-                    setMsg('msgEmail', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
+                    setMsg('msgEmail', '❌ ' + (data.detail || data.error || I18N.errorGeneric), 'error');
                 }
             } catch { setMsg('msgEmail', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
@@ -5705,7 +5744,7 @@ themeToggle.addEventListener('click', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ password: pw })
                 });
-                const data = await res.json();
+                const data = await parseApiResponse(res);
                 if (res.ok) {
                     deleteAccountVerificationId = data.verification_id || '';
                     setMsg('msgDelete', '✅ ' + I18N.codeSentEnterVerification, 'success');
@@ -5726,7 +5765,7 @@ themeToggle.addEventListener('click', () => {
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ verification_id: deleteAccountVerificationId, code: code })
                 });
-                const data = await res.json();
+                const data = await parseApiResponse(res);
                 if (res.ok) {
                     showToast(I18N.accountDeletedLogout, 'success');
                     setTimeout(() => { window.location.href = 'auth/logout.php'; }, 1500);
