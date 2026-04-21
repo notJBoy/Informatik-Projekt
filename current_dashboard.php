@@ -5739,7 +5739,7 @@ themeToggle.addEventListener('click', () => {
             const pw = document.getElementById('deletePassword').value;
             if (!pw) return setMsg('msgDelete', I18N.enterPassword, 'error');
             try {
-                const res = await fetch(`${BACKEND_URL}/auth/delete-account/request-code/${CURRENT_USER_ID}`, {
+                const res = await fetch('auth/delete_account_request_code.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ password: pw })
@@ -5749,7 +5749,7 @@ themeToggle.addEventListener('click', () => {
                     deleteAccountVerificationId = data.verification_id || '';
                     setMsg('msgDelete', '✅ ' + I18N.codeSentEnterVerification, 'success');
                 } else {
-                    setMsg('msgDelete', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
+                    setMsg('msgDelete', '❌ ' + (data.detail || data.error || I18N.errorGeneric), 'error');
                 }
             } catch { setMsg('msgDelete', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
@@ -5760,7 +5760,7 @@ themeToggle.addEventListener('click', () => {
             if (!code) return setMsg('msgDelete', I18N.enterVerificationCode, 'error');
             if (!confirm(I18N.confirmDeleteAccount)) return;
             try {
-                const res = await fetch(`${BACKEND_URL}/auth/delete-account/confirm/${CURRENT_USER_ID}`, {
+                const res = await fetch('auth/delete_account_confirm.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ verification_id: deleteAccountVerificationId, code: code })
@@ -5770,7 +5770,7 @@ themeToggle.addEventListener('click', () => {
                     showToast(I18N.accountDeletedLogout, 'success');
                     setTimeout(() => { window.location.href = 'auth/logout.php'; }, 1500);
                 } else {
-                    setMsg('msgDelete', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
+                    setMsg('msgDelete', '❌ ' + (data.detail || data.error || I18N.errorGeneric), 'error');
                 }
             } catch { setMsg('msgDelete', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
