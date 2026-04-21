@@ -29,5 +29,3 @@ Eine anwendungsbasierte Lernplattform für Schüler und Studierende mit Karteika
 
 ### 4. PHP-Server starten (z. B. via XAMPP auf Port 8080)
 #### → Dashboard öffnen: http://localhost:8080/current_dashboard.php // http://localhost:8080/index.php
-
-Hinweis: Für E-Mail-Verifikation muss in backend.py ein Gmail-SMTP-Account konfiguriert sein.
