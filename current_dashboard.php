@@ -5654,8 +5654,8 @@ themeToggle.addEventListener('click', () => {
             const val = document.getElementById('newUsername').value.trim();
             if (!val) return setMsg('msgUsername', I18N.enterUsername, 'error');
             try {
-                const res = await fetch(`${BACKEND_URL}/auth/change-username/${CURRENT_USER_ID}`, {
-                    method: 'PUT',
+                const res = await fetch('auth/change_username.php', {
+                    method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ new_username: val })
                 });
@@ -5664,7 +5664,7 @@ themeToggle.addEventListener('click', () => {
                     setMsg('msgUsername', '✅ ' + data.message, 'success');
                     document.getElementById('newUsername').value = '';
                 } else {
-                    setMsg('msgUsername', '❌ ' + (data.detail || I18N.errorGeneric), 'error');
+                    setMsg('msgUsername', '❌ ' + (data.detail || data.error || I18N.errorGeneric), 'error');
                 }
             } catch { setMsg('msgUsername', '❌ ' + I18N.serverUnreachable, 'error'); }
         }
